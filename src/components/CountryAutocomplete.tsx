@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from "react";
-import { REGION_OFFICES } from "../data/regionOffices";
+import { COUNTRIES } from "../data/countries";
 
 export function CountryAutocomplete({ value, onSelect }: any) {
   const [query, setQuery] = useState(value || "");
   const [show, setShow] = useState(false);
 
-  const allCountries = (REGION_OFFICES as any).flatMap((r: any) => r.countries);
+  const allCountries = COUNTRIES;
 
   function normalize(str: string) { return (str || "").toLowerCase().replace(/[^a-z0-9]/g, "").trim(); }
 
@@ -26,12 +26,12 @@ export function CountryAutocomplete({ value, onSelect }: any) {
     const q = normalize(query);
     if (!q) return [];
     return allCountries
-      .map((c: any) => {
-        const name = normalize(c.name);
+      .map((name: any) => {
+        const normalized = normalize(name);
         const distance = levenshtein(q, name);
-        const starts = name.startsWith(q);
-        const contains = name.includes(q);
-        return { ...c, starts, contains, distance };
+        const starts = normalized.startsWith(q);
+        const contains = normalized.includes(q);
+        return { name, starts, contains, distance };
       })
       .filter((c: any) => (c.starts) || (c.contains && q.length >= 3) || (c.distance <= 2 && q.length >= 4))
       .sort((a: any, b: any) => {
@@ -61,7 +61,7 @@ export function CountryAutocomplete({ value, onSelect }: any) {
         <div className="absolute z-10 w-full bg-white border border-[#E2E8F0] rounded-xl shadow-md mt-2 max-h-64 overflow-y-auto">
           {suggestions.map((c: any) => (
             <div
-              key={c.code}
+              key={c.name}
               onClick={() => { setQuery(c.name); onSelect(c.name); setShow(false); }}
               className="px-4 py-3 cursor-pointer hover:bg-blue-50 text-sm"
             >
