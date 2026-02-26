@@ -1,0 +1,11 @@
+{
+  "Manufacturing": {
+    "involves_goods": true
+  },
+  "Technology": {
+    "business_in_dubai": true
+  },
+  "E-Commerce": {
+    "business_in_dubai": true
+  }
+}

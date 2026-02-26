@@ -1,0 +1,15 @@
+{
+  "subsector_overrides": {
+    "Professional Services||Legal Services": {
+      "business_in_dubai": false
+    },
+    "Media||Production": {
+      "ata": true
+    }
+  },
+  "activity_overrides": {
+    "act_0687": {
+      "business_in_dubai": false
+    }
+  }
+}

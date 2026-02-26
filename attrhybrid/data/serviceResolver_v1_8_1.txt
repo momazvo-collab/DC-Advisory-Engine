@@ -1,0 +1,172 @@
+
+// ============================================================================
+// Dubai Chambers Advisory Engine
+// serviceResolver.ts
+// Single Source of Truth for Service Eligibility (v1.8.1 Stable)
+// ============================================================================
+
+export type BaseLocation = "Dubai" | "UAE" | "International";
+export type SupportScope = "local" | "international";
+
+export interface UserLocationState {
+  base: BaseLocation;
+  emirate?: string;
+  country?: string;
+}
+
+export interface ActivityAttributes {
+  goods_type?: "physical" | "none";
+  delivery_mode?: "digital" | "service" | "hybrid" | "physical";
+  restricted_goods?: boolean;
+  consumable_goods?: boolean;
+  uses_transportable_equipment?: boolean;
+  ata_facilitator?: boolean;
+  coo_facilitator?: boolean;
+  bid_whitelist?: boolean;
+}
+
+export interface ServiceCard {
+  id: string;
+  title: string;
+  category: "commerce" | "local" | "international" | "membership";
+}
+
+// ============================================================================
+// Service Registry (Metadata Only – No Eligibility Logic Here)
+// ============================================================================
+
+const SERVICE_REGISTRY: Record<string, ServiceCard> = {
+  coo: {
+    id: "coo",
+    title: "Certificate of Origin",
+    category: "commerce"
+  },
+  ata: {
+    id: "ata",
+    title: "ATA Carnet",
+    category: "commerce"
+  },
+  attestation: {
+    id: "attestation",
+    title: "Document Attestation",
+    category: "commerce"
+  },
+  mediation: {
+    id: "mediation",
+    title: "Commercial Mediation",
+    category: "commerce"
+  },
+  business_in_dubai: {
+    id: "business_in_dubai",
+    title: "Business in Dubai",
+    category: "local"
+  },
+  expand_north_star: {
+    id: "expand_north_star",
+    title: "Expand North Star",
+    category: "local"
+  },
+  dubai_global: {
+    id: "dubai_global",
+    title: "Dubai Global",
+    category: "international"
+  },
+  new_horizons: {
+    id: "new_horizons",
+    title: "New Horizons",
+    category: "international"
+  },
+  become_member: {
+    id: "become_member",
+    title: "Become a Member",
+    category: "membership"
+  }
+};
+
+// ============================================================================
+// Centralized Eligibility Resolver
+// ============================================================================
+
+export function resolveServices(
+  activity: ActivityAttributes,
+  location: UserLocationState,
+  scope: SupportScope
+): ServiceCard[] {
+
+  const results: string[] = [];
+
+  const isPhysical = activity.goods_type === "physical";
+  const isRestricted = activity.restricted_goods === true;
+  const isConsumable = activity.consumable_goods === true;
+  const usesEquipment = activity.uses_transportable_equipment === true;
+  const ataFacilitator = activity.ata_facilitator === true;
+  const cooFacilitator = activity.coo_facilitator === true;
+  const isDigitalService =
+    activity.delivery_mode === "digital" ||
+    activity.delivery_mode === "service" ||
+    activity.delivery_mode === "hybrid";
+  const isWhitelisted = activity.bid_whitelist === true;
+
+  // --------------------------------------------------------------------------
+  // COO Eligibility
+  // --------------------------------------------------------------------------
+  if (isPhysical || cooFacilitator) {
+    results.push("coo");
+  }
+
+  // --------------------------------------------------------------------------
+  // ATA Eligibility
+  // --------------------------------------------------------------------------
+  if (
+    ataFacilitator ||
+    (
+      isPhysical &&
+      !isConsumable &&
+      !isRestricted
+    ) ||
+    (
+      usesEquipment &&
+      !isRestricted
+    )
+  ) {
+    results.push("ata");
+  }
+
+  // --------------------------------------------------------------------------
+  // Always Available Commerce Services
+  // --------------------------------------------------------------------------
+  results.push("attestation");
+  results.push("mediation");
+
+  // --------------------------------------------------------------------------
+  // Local Scope Services
+  // --------------------------------------------------------------------------
+  if (scope === "local") {
+
+    if (isDigitalService || isWhitelisted) {
+      results.push("business_in_dubai");
+    }
+
+    results.push("expand_north_star");
+  }
+
+  // --------------------------------------------------------------------------
+  // International Scope Services
+  // --------------------------------------------------------------------------
+  if (scope === "international") {
+    results.push("dubai_global");
+    results.push("new_horizons");
+  }
+
+  // --------------------------------------------------------------------------
+  // Membership CTA (Non-Gating)
+  // --------------------------------------------------------------------------
+  if (location.base !== "Dubai") {
+    results.push("become_member");
+  }
+
+  // --------------------------------------------------------------------------
+  // Return Structured Service Cards
+  // --------------------------------------------------------------------------
+  return results.map(id => SERVICE_REGISTRY[id]);
+}

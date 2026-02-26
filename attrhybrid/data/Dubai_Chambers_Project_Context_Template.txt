@@ -1,0 +1,53 @@
+DUBAI CHAMBERS ADVISORY ENGINE PROJECT CONTEXT TEMPLATE (LOCKED
+ARCHITECTURE)
+
+  ---------------------------------------------
+  1. ARCHITECTURE PRINCIPLES (NON-NEGOTIABLE)
+  ---------------------------------------------
+
+• Centralized eligibility logic • Attribute-driven design •
+Deterministic output (same input = same output) • Single source of truth
+= serviceResolver.ts • UI contains ZERO eligibility logic • JSON
+contains data + flags only • No activity-level hardcoding • No
+probabilistic logic
+
+  ----------------
+  2. SYSTEM FLOW
+  ----------------
+
+Step 1 – Location Step 2 – Support Scope Step 2.5 – Region (if
+International) Step 3 – Activity Selection Step 4 – Services (resolver
+output only)
+
+  ----------------
+  3. DATA LAYERS
+  ----------------
+
+Layer 1 – Activities (1,544 entries) Layer 2 – Subsector Attributes
+(eligibility flags) Layer 3 – serviceResolver.ts (all eligibility logic)
+
+  ----------------------
+  4. CURRENT UI STATUS
+  ----------------------
+
+• Portable single-file UI (React) • No external UI dependencies •
+Preview resolver included (temporary) • Ready for real resolver
+integration
+
+  ----------------------
+  5. INTEGRATION RULES
+  ----------------------
+
+• Do NOT move eligibility logic to UI • Do NOT simplify ATA / COO logic
+• Do NOT redesign architecture • UI only renders resolver output • New
+services must be added in resolver
+
+  ------------------------------
+  6. CURRENT ENHANCEMENT GOALS
+  ------------------------------
+
+• Improve Step 3 UX • Improve Chamber grouping visuals • Add animations
+(UI only) • Add region-based Dubai Global office listing • Prepare for
+real resolver integration
+
+END OF TEMPLATE
