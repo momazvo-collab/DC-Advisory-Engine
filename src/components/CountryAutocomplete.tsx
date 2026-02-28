@@ -1,9 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { COUNTRIES } from "../data/countries";
 
 export function CountryAutocomplete({ value, onSelect }: any) {
   const [query, setQuery] = useState(value || "");
   const [show, setShow] = useState(false);
+
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
   const allCountries = COUNTRIES;
 
@@ -40,12 +42,22 @@ export function CountryAutocomplete({ value, onSelect }: any) {
         if (a.contains && !b.contains) return -1;
         if (!a.contains && b.contains) return 1;
         return a.distance - b.distance;
-      })
-      .slice(0, 5);
+      });
   }, [query]);
 
+  useEffect(() => {
+    function onDocMouseDown(e: MouseEvent) {
+      const el = rootRef.current;
+      if (!el) return;
+      if (e.target instanceof Node && !el.contains(e.target)) setShow(false);
+    }
+
+    document.addEventListener("mousedown", onDocMouseDown);
+    return () => document.removeEventListener("mousedown", onDocMouseDown);
+  }, []);
+
   return (
-    <div className="space-y-3 relative">
+    <div ref={rootRef} className="space-y-3 relative">
       <div className="text-sm font-semibold text-[#003B5C]">Type Country Name</div>
 
       <input
@@ -58,7 +70,7 @@ export function CountryAutocomplete({ value, onSelect }: any) {
       />
 
       {show && query && (
-        <div className="absolute z-10 w-full bg-white border border-[#E2E8F0] rounded-xl shadow-md mt-2 max-h-64 overflow-y-auto">
+        <div className="absolute z-50 w-full bg-white border border-[#E2E8F0] rounded-xl shadow-md mt-2 max-h-64 overflow-y-auto">
           {suggestions.map((c: any) => (
             <div
               key={c.name}

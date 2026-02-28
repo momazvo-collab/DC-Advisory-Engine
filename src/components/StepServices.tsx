@@ -4,10 +4,21 @@ import { ServiceGrid } from "./ServiceGrid";
 import { REGION_OFFICES } from "../data/regionOffices";
 
 export function StepServices({ services, location, scope, region, activity, onBack }: any) {
+  const [isEmailOpen, setIsEmailOpen] = React.useState(false);
+  const [email, setEmail] = React.useState("");
+
   const commerceServices = services.filter((s: any) => s.category === "commerce");
   const localServices = services.filter((s: any) => s.category === "local");
   const internationalServices = services.filter((s: any) => s.category === "international");
   const membershipServices = services.filter((s: any) => s.category === "membership");
+
+  const commerceServicesSorted = React.useMemo(() => {
+    const pinnedTitles = ["Certificate of Origin", "ATA Carnet"] as const;
+
+    const pinned = pinnedTitles.flatMap((t) => commerceServices.filter((s: any) => s.title === t));
+    const rest = commerceServices.filter((s: any) => !pinnedTitles.includes(s.title));
+    return [...pinned, ...rest];
+  }, [commerceServices]);
 
   const regionCountries = region ? (REGION_OFFICES as any).find((r: any) => r.name === region)?.countries || [] : [];
 
@@ -40,7 +51,7 @@ export function StepServices({ services, location, scope, region, activity, onBa
       {commerceServices.length > 0 && (
         <div className="rounded-2xl border border-[#800020] bg-[#FAF2F4] p-6">
           <h3 className="text-xl font-semibold text-[#800020] mb-4">Dubai Chambers – Commerce</h3>
-          <ServiceGrid services={commerceServices} />
+          <ServiceGrid services={commerceServicesSorted} />
         </div>
       )}
 
@@ -85,8 +96,42 @@ export function StepServices({ services, location, scope, region, activity, onBa
         </div>
       )}
 
-      <div className="flex justify-start">
-        <Button variant="outline" onClick={onBack}>Back</Button>
+      <div className="space-y-4">
+        <button
+          type="button"
+          onClick={() => setIsEmailOpen((v) => !v)}
+          className="w-full h-14 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors"
+        >
+          Send Results via Email
+        </button>
+
+        {isEmailOpen && (
+          <div className="w-full rounded-xl border border-[#E2E8F0] bg-white p-4 sm:p-5">
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                className="h-12 w-full rounded-lg border border-gray-300 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  console.log("[email-results]", { email, services, location, scope, region, activity });
+                }}
+                className="h-12 rounded-lg bg-[#003B5C] px-5 text-sm font-semibold text-white hover:bg-[#002f4a] transition-colors"
+              >
+                Send
+              </button>
+            </div>
+            <div className="mt-2 text-xs text-gray-500">We will send your selected services summary.</div>
+          </div>
+        )}
+
+        <div className="flex justify-start">
+          <Button variant="outline" onClick={onBack}>Back</Button>
+        </div>
       </div>
     </div>
   );
