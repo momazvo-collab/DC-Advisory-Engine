@@ -117,8 +117,34 @@ export function StepServices({ services, location, scope, region, activity, onBa
               />
               <button
                 type="button"
-                onClick={() => {
-                  console.log("[email-results]", { email, services, location, scope, region, activity });
+                onClick={async () => {
+                  if (!String(email || "").trim()) {
+                    alert("Failed to send email");
+                    return;
+                  }
+
+                  try {
+                    const resp = await fetch("/api/send-email", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        email,
+                        activity: activity?.activity_name,
+                        scope,
+                        services: (services || []).map((s: any) => s.title),
+                      }),
+                    });
+
+                    const data = await resp.json().catch(() => ({}));
+
+                    if (resp.ok && (data as any)?.success) {
+                      alert("Email sent successfully");
+                    } else {
+                      alert("Failed to send email");
+                    }
+                  } catch {
+                    alert("Failed to send email");
+                  }
                 }}
                 className="h-12 rounded-lg bg-[#003B5C] px-5 text-sm font-semibold text-white hover:bg-[#002f4a] transition-colors"
               >
