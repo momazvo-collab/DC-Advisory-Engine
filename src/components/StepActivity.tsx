@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { Button } from "./ui";
 import activities from "../data/activities.json";
 
@@ -8,19 +8,23 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
   const [query, setQuery] = useState(value || "");
   const [debouncedQuery, setDebouncedQuery] = useState(value || "");
   const [selected, setSelected] = useState<any>(null);
-  const [sectorFilter, setSectorFilter] = useState<any>(null);
-  const POPULAR_SECTORS = [
-    "Technology",
-    "Logistics",
-    "Healthcare",
-    "Manufacturing",
-    "Professional Services",
-  ] as const;
+  const [sectorFilter, setSectorFilter] = useState<string | null>(null);
+  const [glow, setGlow] = useState(false);
+  const [activeSubsector, setActiveSubsector] = useState<string | null>(null);
+  const [expandedSubsectors, setExpandedSubsectors] = useState(false);
 
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedQuery(query), 150);
-    return () => clearTimeout(t);
-  }, [query]);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const INTENT_CARDS = [
+    { emoji: "🚚", label: "Logistics", value: "Logistics" },
+    { emoji: "💻", label: "Tech", value: "Information Technology" },
+    { emoji: "🛍️", label: "Trading", value: "Trading" },
+    { emoji: "🏗️", label: "Construction", value: "Construction" },
+    { emoji: "🏭", label: "Manufacturing", value: "Manufacturing" },
+    { emoji: "🧾", label: "Professional Services", value: "Professional Services" },
+    { emoji: "🏥", label: "Healthcare", value: "Healthcare" },
+    { emoji: "🌴", label: "Tourism", value: "Hospitality" }
+  ] as const;
 
   // Simplified smart search
   // - single selection only
@@ -57,41 +61,53 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
     return normalizeSpaced(str).split(" ").filter(Boolean);
   }
 
-  const filteredActivities = useMemo(() => {
+  const sectorFilteredActivities = useMemo(() => {
     return (activities as any).filter((a: any) => {
-      if (sectorFilter) {
-        const sf = String(sectorFilter).toLowerCase();
-        const sector = String(a.sector || "").toLowerCase();
-        const name = String(a.activity_name || "").toLowerCase();
-
-        if (sf === "logistics") {
-          const logisticsKeywords = ["transport", "freight", "truck", "cargo", "shipping", "road"];
-          const sectorMatch = sector.includes("logistics");
-          const nameMatch = logisticsKeywords.some((k) => name.includes(k));
-          if (!sectorMatch && !nameMatch) return false;
-        } else {
-          if (!sector.includes(sf)) return false;
-        }
-      }
+      if (sectorFilter && a.sector !== sectorFilter) return false;
       return true;
     });
   }, [sectorFilter]);
 
-  function relevanceScore(rawQuery: string, item: any) {
-    const q = String(rawQuery || "").trim().toLowerCase();
-    if (!q) return 0;
+  const subsectorGroups = useMemo(() => {
+    if (!sectorFilter) return [] as Array<{ name: string; activities: any[] }>;
 
-    const name = String(item.activity_name || "").trim().toLowerCase();
-    const subsector = String(item.subsector || "").trim().toLowerCase();
-    const sector = String(item.sector || "").trim().toLowerCase();
+    const inSector = (activities as any).filter((a: any) => a.sector === sectorFilter);
+    const groups = new Map<string, any[]>();
+    for (const a of inSector) {
+      const ss = String(a.subsector || "").trim() || "Other";
+      const arr = groups.get(ss);
+      if (arr) arr.push(a);
+      else groups.set(ss, [a]);
+    }
 
-    if (name === q) return 100;
-    if (name.startsWith(q)) return 90;
-    if (name.includes(q)) return 75;
-    if (subsector.includes(q)) return 50;
-    if (sector.includes(q)) return 30;
-    return 0;
-  }
+    return [...groups.entries()]
+      .map(([name, acts]) => ({ name, activities: acts }))
+      .sort((a, b) => {
+        if (b.activities.length !== a.activities.length) return b.activities.length - a.activities.length;
+        return a.name.localeCompare(b.name);
+      });
+  }, [sectorFilter]);
+
+  const commonActivities = useMemo(() => {
+    const q = String(debouncedQuery || "").trim();
+    if (!sectorFilter) return [] as any[];
+    if (q) return [] as any[];
+
+    const counts = new Map<string, number>();
+    for (const a of sectorFilteredActivities as any) {
+      const ss = String(a.subsector || "");
+      counts.set(ss, (counts.get(ss) || 0) + 1);
+    }
+
+    const sortedActs = [...(sectorFilteredActivities as any)].sort((a: any, b: any) => {
+      const ca = counts.get(String(a.subsector || "")) || 0;
+      const cb = counts.get(String(b.subsector || "")) || 0;
+      if (cb !== ca) return cb - ca;
+      return String(a.activity_name).localeCompare(String(b.activity_name));
+    });
+
+    return sortedActs.slice(0, 5);
+  }, [debouncedQuery, sectorFilter, sectorFilteredActivities]);
 
   function score(queryStr: string, item: any) {
     const q = normalizeSpaced(queryStr);
@@ -133,32 +149,57 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
 
   const results = useMemo(() => {
     const q = String(debouncedQuery || "").trim();
-    if (q) {
-      return filteredActivities
-        .map((x: any) => ({ x, s: relevanceScore(q, x) }))
-        .filter((r: any) => r.s > 0)
-        .sort((a: any, b: any) => {
-          if (b.s !== a.s) return b.s - a.s;
-          return String(a.x.activity_name).localeCompare(String(b.x.activity_name));
-        })
-        .slice(0, 8)
-        .map((r: any) => r.x);
-    }
+    if (!q) return [] as any[];
 
-    if (sectorFilter) {
-      return filteredActivities
-        .slice()
-        .sort((a: any, b: any) => String(a.activity_name).localeCompare(String(b.activity_name)))
-        .slice(0, 8);
-    }
+    const sortedActs = [...(sectorFilteredActivities as any)]
+      .map((x: any) => ({ x, s: score(q, x) }))
+      .filter((r: any) => r.s > 0)
+      .sort((a: any, b: any) => {
+        if (b.s !== a.s) return b.s - a.s;
+        return String(a.x.activity_name).localeCompare(String(b.x.activity_name));
+      })
+      .slice(0, 8)
+      .map((r: any) => r.x);
 
-    return [] as any[];
-  }, [debouncedQuery, filteredActivities, sectorFilter]);
+    return sortedActs;
+  }, [debouncedQuery, sectorFilteredActivities]);
 
   const canProceed = !!selected;
 
+  const isEmptyQuery = !String(query || "").trim();
+  const showPopular = !!sectorFilter && isEmptyQuery && activeSubsector === null && !expandedSubsectors;
+  const showExpanded = !!sectorFilter && isEmptyQuery && activeSubsector === null && expandedSubsectors;
+
+  function handleIntentClick(value: string) {
+    setSelected(null);
+    onChange(null);
+    setActiveSubsector(null);
+    setExpandedSubsectors(false);
+
+    setSectorFilter((prev) => {
+      const next = prev === value ? null : value;
+
+      // Trigger glow ONLY when selecting a new sector
+      if (prev !== value) {
+        setGlow(true);
+        setTimeout(() => setGlow(false), 1200);
+      }
+
+      return next;
+    });
+
+    setQuery("");
+    setDebouncedQuery("");
+
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      <style>
+        {`@keyframes stepActivityFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.step-activity-fade-in{animation:stepActivityFadeIn .24s ease-out both}`}
+      </style>
       <div className="mx-auto w-full max-w-5xl px-6 py-10">
         <h1 className="text-3xl md:text-4xl font-semibold text-gray-800 text-center">
           What does your business do?
@@ -181,14 +222,22 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
           </span>
 
           <input
+            ref={inputRef}
             type="text"
-            placeholder="e.g. Software development, Freight forwarding..."
+            placeholder={
+              sectorFilter
+                ? `Search within ${sectorFilter}...`
+                : "e.g. Software development, Freight forwarding..."
+            }
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
+              setDebouncedQuery(e.target.value);
               setSelected(null);
             }}
-            className="w-full h-14 pl-12 pr-10 rounded-2xl border border-gray-200 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+            className={`w-full h-14 pl-12 pr-10 rounded-2xl border border-gray-200 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-500 ease-out ${
+              glow ? "ring-4 ring-blue-400 shadow-2xl" : ""
+            }`}
           />
 
           {query && (
@@ -196,9 +245,10 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
               type="button"
               onClick={() => {
                 setQuery("");
+                setDebouncedQuery("");
                 setSelected(null);
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-200"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-300 ease-out active:scale-[0.97]"
               aria-label="Clear search"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
@@ -212,45 +262,143 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
               </svg>
             </button>
           )}
+
+          {!query && sectorFilter && (
+            <button
+              type="button"
+              onClick={() => {
+                setSectorFilter(null);
+                setActiveSubsector(null);
+                setExpandedSubsectors(false);
+                setQuery("");
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-blue-600 font-semibold hover:text-blue-800 bg-blue-50 px-2 py-1 rounded transition-colors"
+            >
+              Clear Filter
+            </button>
+          )}
         </div>
 
-        {!query && (
-          <div className="mt-10 max-w-5xl mx-auto">
-            <div className="text-xs uppercase tracking-wide text-gray-400 text-center">Popular sectors</div>
-            <div className="mt-4 flex flex-wrap justify-center gap-3">
-              {POPULAR_SECTORS.map((s) => (
+        <div className="text-sm text-slate-500 text-center mt-3">
+          {sectorFilter
+            ? `Showing results in ${sectorFilter}. Type to refine or click the sector again to clear.`
+            : "Type your activity or choose a sector below"}
+        </div>
+
+        <div className="mt-10 max-w-5xl mx-auto step-activity-fade-in">
+          <div className="text-base font-semibold text-slate-800 text-center mt-6 mb-4">Popular Sectors</div>
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {INTENT_CARDS.map((card) => (
+              <button
+                key={card.label}
+                onClick={() => handleIntentClick(card.value)}
+                className={`px-5 py-3 rounded-full text-sm font-medium cursor-pointer transition-all duration-300 ease-out hover:scale-105 active:scale-[0.97] ${
+                  sectorFilter === card.value
+                    ? "bg-blue-600 text-white shadow-md scale-105"
+                    : "bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700"
+                }`}
+              >
+                <div className="flex flex-col items-center leading-tight">
+                  <div className="text-3xl">{card.emoji}</div>
+                  <div className="mt-1">{card.label}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {sectorFilter && (
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={() => {
+                  setSectorFilter(null);
+                  setActiveSubsector(null);
+                  setExpandedSubsectors(false);
+                  setQuery("");
+                }}
+                className="px-5 py-3 rounded-full bg-white text-gray-600 text-sm font-medium cursor-pointer border border-gray-200 hover:bg-gray-50 hover:scale-105 transition-all duration-300 ease-out active:scale-[0.97]"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+        </div>
+
+        {showPopular && (
+          <div className="mt-8 max-w-5xl mx-auto">
+            <div className="text-xs uppercase tracking-wide text-gray-400 text-center">Popular Categories</div>
+
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {subsectorGroups.slice(0, 6).map((g) => (
                 <button
-                  key={s}
-                  onClick={() => {
-                    setSelected(null);
-                    setSectorFilter((prev: any) => (prev === s ? null : s));
-                  }}
-                  className={`px-5 py-3 rounded-full text-sm font-medium cursor-pointer transition-all duration-150 hover:scale-105 ${
-                    sectorFilter === s
-                      ? "bg-blue-600 text-white shadow-md scale-105"
-                      : "bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700"
-                  }`}
+                  key={g.name}
+                  type="button"
+                  onClick={() => setActiveSubsector(g.name)}
+                  className="w-full text-left rounded-2xl border border-gray-200 bg-white px-5 py-4 hover:bg-blue-50 hover:border-blue-200 transition"
                 >
-                  {s}
+                  <div className="text-sm font-semibold text-gray-800 leading-snug">{g.name}</div>
+                  <div className="mt-2 text-sm text-gray-500">{g.activities.length} activities</div>
                 </button>
               ))}
+            </div>
 
-              {sectorFilter && (
-                <button
-                  onClick={() => { setSectorFilter(null); }}
-                  className="px-5 py-3 rounded-full bg-white text-gray-600 text-sm font-medium cursor-pointer border border-gray-200 hover:bg-gray-50 hover:scale-105 transition-all duration-150"
-                >
-                  Clear
-                </button>
-              )}
+            <div className="mt-6 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setExpandedSubsectors(true)}
+                className="px-5 py-2 rounded-full bg-white border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Browse all categories ↓
+              </button>
             </div>
           </div>
         )}
 
-        <div className="mt-8 max-w-3xl mx-auto">
-          {results.length > 0 ? (
-            <div className="space-y-3">
-              {results.map((r: any) => {
+        {showExpanded && (
+          <div className="mt-8 max-w-5xl mx-auto step-activity-fade-in">
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => setExpandedSubsectors(false)}
+                className="px-5 py-3 rounded-full bg-white text-gray-600 text-sm font-medium cursor-pointer border border-gray-200 hover:bg-gray-50 hover:scale-105 transition-all duration-300 ease-out active:scale-[0.97]"
+              >
+                Collapse ↑
+              </button>
+            </div>
+
+            <div className="mt-5 max-h-[65vh] md:max-h-[70vh] overflow-auto rounded-2xl border border-gray-200 bg-white">
+              <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                {subsectorGroups.map((g) => (
+                  <button
+                    key={g.name}
+                    type="button"
+                    onClick={() => {
+                      setActiveSubsector(g.name);
+                    }}
+                    className="w-full h-28 md:h-32 text-left rounded-2xl border border-gray-200 bg-white px-5 py-4 transition-all duration-300 ease-out hover:scale-[1.01] hover:border-blue-300 hover:bg-blue-50 active:scale-[0.97]"
+                  >
+                    <div className="text-sm md:text-base font-semibold text-gray-800 leading-snug">{g.name}</div>
+                    <div className="text-sm md:text-base text-gray-500 mt-2">{g.activities.length} activities</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {sectorFilter && !String(query || "").trim() && activeSubsector !== null && (
+          <div className="mt-8 max-w-3xl mx-auto step-activity-fade-in">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveSubsector(null);
+              }}
+              className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              ← Back to categories
+            </button>
+
+            <div className="mt-4 space-y-3">
+              {(subsectorGroups.find((g) => g.name === activeSubsector)?.activities || []).map((r: any) => {
                 const isSelected = selected?.activity_id === r.activity_id;
                 return (
                   <button
@@ -259,9 +407,10 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
                     onClick={() => {
                       setSelected(r);
                       setQuery(r.activity_name);
+                      setDebouncedQuery(r.activity_name);
                       onChange(r);
                     }}
-                    className={`w-full text-left rounded-2xl border px-5 py-4 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] ${
+                    className={`w-full text-sm md:text-base text-left rounded-2xl border px-5 py-4 md:px-6 md:py-5 transition-all duration-300 ease-out hover:scale-[1.01] active:scale-[0.97] ${
                       isSelected
                         ? "border-blue-600 bg-blue-50 shadow-sm"
                         : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50"
@@ -273,12 +422,50 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
                 );
               })}
             </div>
-          ) : (
-            <div className="text-sm text-gray-500 text-center">
-              {query ? "No results found." : sectorFilter ? "Select an activity from this sector." : "Start typing to search activities."}
+
+            <div className="pt-6 text-center">
+              <button
+                onClick={() => setActiveSubsector(null)}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                ← Back to Categories
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {!!String(query || "").trim() && (
+          <div className="mt-8 max-w-3xl mx-auto step-activity-fade-in">
+            {results.length > 0 ? (
+              <div className="space-y-3">
+                {results.map((r: any) => {
+                  const isSelected = selected?.activity_id === r.activity_id;
+                  return (
+                    <button
+                      key={r.activity_id}
+                      type="button"
+                      onClick={() => {
+                        setSelected(r);
+                        setQuery(r.activity_name);
+                        onChange(r);
+                      }}
+                      className={`w-full text-sm md:text-base text-left rounded-2xl border px-5 py-4 md:px-6 md:py-5 transition-all duration-300 ease-out hover:scale-[1.01] active:scale-[0.97] ${
+                        isSelected
+                          ? "border-blue-600 bg-blue-50 shadow-sm"
+                          : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50"
+                      }`}
+                    >
+                      <div className="text-base md:text-lg font-semibold text-gray-800 leading-snug">{r.activity_name}</div>
+                      <div className="text-sm text-gray-500 mt-2">{r.sector} • {r.subsector}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500 text-center">No results found.</div>
+            )}
+          </div>
+        )}
 
         {selected && (
           <div className="mt-10 max-w-3xl mx-auto border border-blue-200 rounded-2xl p-6 bg-white shadow-md transition-all duration-200">
@@ -297,7 +484,7 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
             onClick={() => {
               if (selected) { onNext(); return; }
             }}
-            className="mt-12 w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl shadow-md transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            className="mt-12 w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 md:py-5 text-base md:text-lg rounded-xl shadow-md transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             Continue
           </Button>
