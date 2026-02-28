@@ -1,14 +1,30 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
+  // ENV GUARD
+  if (!process.env.RESEND_API_KEY) {
+    console.error("Missing RESEND_API_KEY");
+    return res.status(500).json({ error: "Email service not configured" });
+  }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
   try {
-    const { email, activity, scope, services } = req.body;
+    const { email, activity, scope, services } = req.body || {};
+
+    // PAYLOAD VALIDATION
+    if (
+      !email ||
+      !activity ||
+      !scope ||
+      !Array.isArray(services)
+    ) {
+      return res.status(400).json({ error: "Invalid request payload" });
+    }
 
     const html = generateTemplate(activity, scope, services);
 
@@ -21,7 +37,7 @@ export default async function handler(req: any, res: any) {
 
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error(error);
+    console.error("Email send error:", error);
     return res.status(500).json({ error: "Failed to send email" });
   }
 }
