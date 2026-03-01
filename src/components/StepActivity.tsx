@@ -305,7 +305,7 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
   };
 
   function handleBackAction() {
-    if (viewMode === "search" || viewMode === "selected") {
+    if (String(query || "").trim().length > 0) {
       resetSearchFlow();
       return;
     }
