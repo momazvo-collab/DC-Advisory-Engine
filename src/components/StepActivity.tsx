@@ -389,7 +389,7 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
 
         {level === "sector" && (
           <div className="mt-10 max-w-5xl mx-auto step-activity-fade-in">
-            <div className="text-base font-semibold text-slate-800 text-center mt-6 mb-4">Popular Sectors</div>
+            <div className="text-base font-semibold text-slate-800 text-center mt-6 mb-4">{showAllSectors ? "All Sectors" : "Popular Sectors"}</div>
 
             <div
               ref={sectorScrollRef}
@@ -397,8 +397,7 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
               className="mt-4 max-h-[65vh] md:max-h-[70vh] overflow-auto rounded-2xl"
             >
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {popularSectors.map((sector) => {
-                  console.log("Sector from data:", sector);
+                {(showAllSectors ? allSectors : popularSectors).map((sector) => {
                   const meta = sectorMeta[sector];
                   const label = meta?.displayLabel ?? sector;
                   const emoji = meta?.emoji ?? "📁";
@@ -425,51 +424,16 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
                   );
                 })}
               </div>
+            </div>
 
-              <div className="mt-6 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => setShowAllSectors((v) => !v)}
-                  className="px-5 py-2 rounded-full bg-white border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  {showAllSectors ? "Hide All Sectors ▴" : "View All Sectors ▾"}
-                </button>
-              </div>
-
-              {showAllSectors && (
-                <div className="mt-6">
-                  <div className="text-xs uppercase tracking-wide text-gray-400 text-center">All Sectors</div>
-                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    {remainingSectors.map((sector) => {
-                      console.log("Sector from data:", sector);
-                      const meta = sectorMeta[sector];
-                      const label = meta?.displayLabel ?? sector;
-                      const emoji = meta?.emoji ?? "📁";
-                      const isSelected = sectorFilter === sector;
-                      return (
-                        <button
-                          key={sector}
-                          onClick={() => {
-                            captureScrollForLevel("sector");
-                            handleIntentClick(sector);
-                            restoreScrollForLevel("subsector");
-                          }}
-                          className={`px-5 py-3 rounded-full text-sm font-medium cursor-pointer transition-all duration-300 ease-out hover:scale-105 active:scale-[0.97] ${
-                            isSelected
-                              ? "bg-blue-600 text-white shadow-md scale-105"
-                              : "bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700"
-                          }`}
-                        >
-                          <div className="flex flex-col items-center leading-tight">
-                            <div className="text-3xl">{emoji}</div>
-                            <div className="mt-1">{label}</div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+            <div className="mt-6 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setShowAllSectors((v) => !v)}
+                className="px-5 py-2 rounded-full bg-white border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                {showAllSectors ? "Show Less ▲" : "View All Sectors ▾"}
+              </button>
             </div>
           </div>
         )}
