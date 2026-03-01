@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "./ui";
 import activities from "../data/activities.json";
 import { sectorMeta } from "../data/sectorMeta";
@@ -11,6 +11,7 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
   const [glow, setGlow] = useState(false);
   const [activeSubsector, setActiveSubsector] = useState<string | null>(null);
   const [level, setLevel] = useState<"sector" | "subsector" | "activityList" | "focus">("sector");
+  const [viewMode, setViewMode] = useState<"drilldown" | "search" | "selected">("drilldown");
 
   const sectorScrollRef = useRef<HTMLDivElement | null>(null);
   const subsectorScrollRef = useRef<HTMLDivElement | null>(null);
@@ -53,6 +54,16 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
     const popularSet = new Set(popularSectors);
     return allSectors.filter((s) => !popularSet.has(s));
   }, [allSectors, popularSectors]);
+
+  useEffect(() => {
+    if (viewMode !== "selected") {
+      if (String(query || "").trim().length > 0) {
+        setViewMode("search");
+      } else {
+        setViewMode("drilldown");
+      }
+    }
+  }, [query, viewMode]);
 
   // Simplified smart search
   // - single selection only
@@ -216,7 +227,32 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
       .map((r: any) => r.x);
   }, [activeSubsector, debouncedQuery, subsectorActivities]);
 
-  const canProceed = level === "focus" && !!selected;
+  const scopedActivitiesForSearch = useMemo<any[]>(() => {
+    if (sectorFilter) {
+      return (activities as any[]).filter((a: any) => String(a.sector) === sectorFilter);
+    }
+    return activities as any[];
+  }, [sectorFilter]);
+
+  const filteredActivitiesForSearch = useMemo<any[]>(() => {
+    const q = String(debouncedQuery || "").trim();
+    if (!q) return scopedActivitiesForSearch;
+    const qLower = q.toLowerCase();
+    return scopedActivitiesForSearch.filter((a: any) =>
+      String(a.activity_name || "").toLowerCase().includes(qLower)
+    );
+  }, [debouncedQuery, scopedActivitiesForSearch]);
+
+  const canProceed = !!selected;
+
+  function handleSelectActivity(activity: any) {
+    setSelected(activity);
+    onChange(activity);
+    setSectorFilter(String(activity?.sector || "") || null);
+    setActiveSubsector(String(activity?.subsector || "") || null);
+    setLevel("focus");
+    setViewMode("selected");
+  }
 
   function handleIntentClick(value: string) {
     setSelected(null);
@@ -245,6 +281,7 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
     setActiveSubsector(null);
     setQuery("");
     setDebouncedQuery("");
+    setViewMode("drilldown");
     setShowAllSectors(false);
     scrollMemoryRef.current.sector = 0;
     scrollMemoryRef.current.subsector = 0;
@@ -254,6 +291,31 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
     if (activityListScrollRef.current) activityListScrollRef.current.scrollTop = 0;
     setLevel("sector");
     setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
+  const resetSearchFlow = () => {
+    setQuery("");
+    setDebouncedQuery("");
+    setSelected(null);
+    onChange(null);
+    setSectorFilter(null);
+    setActiveSubsector(null);
+    setViewMode("drilldown");
+    setLevel("sector");
+  };
+
+  function handleBackAction() {
+    if (viewMode === "search" || viewMode === "selected") {
+      resetSearchFlow();
+      return;
+    }
+
+    if (level === "sector") {
+      onBack();
+      return;
+    }
+
+    handleBackWithinStep();
   }
 
   function captureScrollForLevel(l: "sector" | "subsector" | "activityList") {
@@ -334,9 +396,11 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
             ref={inputRef}
             type="text"
             placeholder={
-              activeSubsector
-                ? `Search within ${activeSubsector}...`
-                : "e.g. Software development, Freight forwarding..."
+              viewMode === "search" && sectorFilter
+                ? `Search within ${sectorFilter}...`
+                : activeSubsector
+                  ? `Search within ${activeSubsector}...`
+                  : "e.g. Software development, Freight forwarding..."
             }
             value={query}
             onChange={(e) => {
@@ -352,6 +416,10 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
             <button
               type="button"
               onClick={() => {
+                if (viewMode === "search" || viewMode === "selected") {
+                  resetSearchFlow();
+                  return;
+                }
                 setQuery("");
                 setDebouncedQuery("");
               }}
@@ -387,7 +455,51 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
             : "Type your activity or choose a sector below"}
         </div>
 
-        {level === "sector" && (
+        {viewMode === "search" && !!String(query || "").trim() && (
+          <div className="mt-8 max-w-3xl mx-auto step-activity-fade-in">
+            <div className="flex items-center justify-end gap-2 mb-4">
+              <button
+                type="button"
+                onClick={() => {
+                  resetSearchFlow();
+                }}
+                className="px-4 py-2 rounded-full bg-white text-gray-600 text-sm font-medium cursor-pointer border border-gray-200 hover:bg-gray-50"
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  resetSearchFlow();
+                }}
+                className="px-4 py-2 rounded-full bg-white text-gray-600 text-sm font-medium cursor-pointer border border-gray-200 hover:bg-gray-50"
+              >
+                Back
+              </button>
+            </div>
+            {filteredActivitiesForSearch.length > 0 ? (
+              <div className="space-y-3">
+                {filteredActivitiesForSearch.slice(0, 12).map((r: any) => (
+                  <button
+                    key={r.activity_id}
+                    type="button"
+                    onClick={() => {
+                      handleSelectActivity(r);
+                    }}
+                    className="w-full text-sm md:text-base text-left rounded-2xl border px-5 py-4 md:px-6 md:py-5 transition-all duration-300 ease-out hover:scale-[1.01] active:scale-[0.97] border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50"
+                  >
+                    <div className="text-base md:text-lg font-semibold text-gray-800 leading-snug">{r.activity_name}</div>
+                    <div className="text-sm text-gray-500 mt-2">{r.sector} • {r.subsector}</div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500 text-center">No results found.</div>
+            )}
+          </div>
+        )}
+
+        {viewMode === "drilldown" && level === "sector" && (
           <div className="mt-10 max-w-5xl mx-auto step-activity-fade-in">
             <div className="text-base font-semibold text-slate-800 text-center mt-6 mb-4">{showAllSectors ? "All Sectors" : "Popular Sectors"}</div>
 
@@ -438,7 +550,7 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
           </div>
         )}
 
-        {level === "subsector" && sectorFilter && (
+        {viewMode === "drilldown" && level === "subsector" && sectorFilter && (
           <div className="mt-8 max-w-5xl mx-auto step-activity-fade-in">
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold text-slate-800">{sectorFilter}</div>
@@ -446,7 +558,7 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
                 <button
                   type="button"
                   onClick={() => {
-                    handleBackWithinStep();
+                    handleBackAction();
                   }}
                   className="px-4 py-2 rounded-full bg-white text-gray-600 text-sm font-medium cursor-pointer border border-gray-200 hover:bg-gray-50"
                 >
@@ -492,7 +604,7 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
             <div className="mt-6 flex justify-center gap-2">
               <button
                 type="button"
-                onClick={handleBackWithinStep}
+                onClick={handleBackAction}
                 className="px-5 py-3 rounded-full bg-white text-gray-600 text-sm font-medium cursor-pointer border border-gray-200 hover:bg-gray-50"
               >
                 Back
@@ -508,14 +620,14 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
           </div>
         )}
 
-        {level === "activityList" && sectorFilter && activeSubsector && (
+        {viewMode === "drilldown" && level === "activityList" && sectorFilter && activeSubsector && (
           <div className="mt-8 max-w-3xl mx-auto step-activity-fade-in">
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold text-slate-800">{activeSubsector}</div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={handleBackWithinStep}
+                  onClick={handleBackAction}
                   className="px-4 py-2 rounded-full bg-white text-gray-600 text-sm font-medium cursor-pointer border border-gray-200 hover:bg-gray-50"
                 >
                   Back
@@ -544,9 +656,7 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
                         type="button"
                         onClick={() => {
                           captureScrollForLevel("activityList");
-                          setSelected(r);
-                          onChange(r);
-                          setLevel("focus");
+                          handleSelectActivity(r);
                         }}
                         className="w-full text-sm md:text-base text-left rounded-2xl border px-5 py-4 md:px-6 md:py-5 transition-all duration-300 ease-out hover:scale-[1.01] active:scale-[0.97] border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50"
                       >
@@ -564,7 +674,7 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
             <div className="pt-6 text-center flex justify-center gap-2">
               <button
                 type="button"
-                onClick={handleBackWithinStep}
+                onClick={handleBackAction}
                 className="px-5 py-3 rounded-full bg-white text-gray-600 text-sm font-medium cursor-pointer border border-gray-200 hover:bg-gray-50"
               >
                 Back
@@ -580,19 +690,21 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
           </div>
         )}
 
-        {level === "focus" && selected && (
+        {viewMode === "selected" && selected && (
           <div className="mt-10 max-w-3xl mx-auto step-activity-fade-in">
             <div className="flex items-center justify-between">
               <button
                 type="button"
-                onClick={handleBackWithinStep}
+                onClick={handleBackAction}
                 className="px-4 py-2 rounded-full bg-white text-gray-600 text-sm font-medium cursor-pointer border border-gray-200 hover:bg-gray-50"
               >
                 Back
               </button>
               <button
                 type="button"
-                onClick={handleClearAll}
+                onClick={() => {
+                  resetSearchFlow();
+                }}
                 className="px-4 py-2 rounded-full bg-white text-gray-600 text-sm font-medium cursor-pointer border border-gray-200 hover:bg-gray-50"
               >
                 Clear
@@ -611,11 +723,7 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
           <Button
             variant="outline"
             onClick={() => {
-              if (level === "sector") {
-                onBack();
-                return;
-              }
-              handleBackWithinStep();
+              handleBackAction();
             }}
           >
             Back
@@ -623,7 +731,7 @@ export function StepActivity({ value, onChange, onNext, onBack }: any) {
           <Button
             disabled={!canProceed}
             onClick={() => {
-              if (level === "focus" && selected) {
+              if (selected) {
                 onNext();
                 return;
               }
