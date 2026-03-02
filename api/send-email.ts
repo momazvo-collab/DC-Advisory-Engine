@@ -127,17 +127,17 @@ function generateTemplate(
   function renderServiceCard(service: string, color: string) {
     return `
       <tr>
-        <td style="padding:14px 18px;border-top:1px solid #eef0f3;">
+        <td style="padding:12px 24px;">
           <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#111;">
             ${service}
           </div>
-          <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:6px;line-height:18px;">
+          <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:4px;line-height:18px;">
             ${serviceDescriptions[service] || ""}
           </div>
-          <div style="margin-top:10px;">
+          <div style="margin-top:6px;">
             <a href="${serviceLinks[service] || "#"}"
-               style="display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${color};text-decoration:none;border:1px solid ${color};padding:8px 12px;border-radius:6px;">
-              View Service
+               style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#003B5C;text-decoration:none;">
+              View Service →
             </a>
           </div>
         </td>
@@ -153,18 +153,7 @@ function generateTemplate(
     if (!services.length) return "";
 
     return `
-      <tr>
-        <td style="padding:0 24px 20px 24px;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eef0f3;border-radius:10px;">
-            <tr>
-              <td style="padding:16px;">
-                <img src="${logo}" width="180" style="display:block;border:0;height:auto;" />
-              </td>
-            </tr>
-            ${services.map((s) => renderServiceCard(s, accentColor)).join("")}
-          </table>
-        </td>
-      </tr>
+      ${services.map((s) => renderServiceCard(s, accentColor)).join("")}
     `;
   }
 
@@ -176,21 +165,18 @@ function generateTemplate(
       <tr>
         <td align="center" style="padding:28px 12px;">
           <table width="600" cellpadding="0" cellspacing="0" role="presentation" style="background:#ffffff;border-radius:12px;border:1px solid #e5e7eb;">
-
             <tr>
               <td style="padding:18px 24px;">
                 <img src="${logoMain}" width="180" style="display:block;border:0;height:auto;" />
               </td>
             </tr>
-
             <tr>
-              <td style="padding:0 24px 10px 24px;">
+              <td style="padding:0 24px 16px 24px;">
                 <div style="font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#111;line-height:24px;">
                   Your Dubai Chambers Advisory Summary
                 </div>
               </td>
             </tr>
-
             <tr>
               <td style="padding:0 24px 16px 24px;">
                 <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f9fafb;border:1px solid #eef0f3;border-radius:10px;">
@@ -203,7 +189,6 @@ function generateTemplate(
                 </table>
               </td>
             </tr>
-
             <tr>
               <td style="padding:0 24px 8px 24px;">
                 <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#111;">
@@ -211,7 +196,6 @@ function generateTemplate(
                 </div>
               </td>
             </tr>
-
             <tr>
               <td style="padding:0 24px 8px 24px;">
                 <div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6b7280;">
@@ -219,121 +203,61 @@ function generateTemplate(
                 </div>
               </td>
             </tr>
-
             ${hasMembership
               ? `
             <tr>
-              <td style="padding:0 24px 14px 24px;">
-                <div style="margin-bottom:18px;">
-                  <div style="font-family:Arial,Helvetica,sans-serif;font-weight:bold;font-size:14px;color:#111;">
-                    Become a Member
-                  </div>
-                  <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:4px;line-height:18px;">
-                    ${"Unlock full access to Chamber services."}
-                  </div>
-                  <div style="margin-top:6px;">
-                    <a href="https://www.dubaichambers.com/en/new-membership" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#003B5C;text-decoration:none;">
-                      View Service →
-                    </a>
-                  </div>
+              <td style="padding:12px 24px;">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#111;">Become a Member</div>
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:4px;line-height:18px;">${"Unlock full access to Chamber services."}</div>
+                <div style="margin-top:6px;">
+                  <a href="https://www.dubaichambers.com/en/new-membership" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#003B5C;text-decoration:none;">View Service →</a>
                 </div>
               </td>
             </tr>
             `
               : ""}
-
             ${commerceServices.length
               ? `
             <tr>
-              <td style="padding:8px 24px 6px 24px;">
-                <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#111;">Dubai Chambers – Commerce</div>
+              <td style="padding:10px 24px 6px 24px;">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#111;display:inline-block;padding-bottom:6px;border-bottom:2px solid #7A0019;">Dubai Chambers – Commerce</div>
               </td>
             </tr>
-            <tr>
-              <td style="padding:0 24px 10px 24px;">
-                ${commerceServices
-                  .map(
-                    (service) => `
-                  <div style="margin-bottom:18px;">
-                    <div style="font-family:Arial,Helvetica,sans-serif;font-weight:bold;font-size:14px;color:#111;">${service}</div>
-                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:4px;line-height:18px;">${serviceDescriptions[service] || ""}</div>
-                    <div style="margin-top:6px;"><a href="${serviceLinks[service] || "#"}" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#003B5C;text-decoration:none;">View Service →</a></div>
-                  </div>
-                `
-                  )
-                  .join("")}
-              </td>
-            </tr>
+            ${renderChamberSection(logoCommerce, commerceServices, "#7A0019")}
             `
               : ""}
-
             ${internationalServices.length
               ? `
             <tr>
-              <td style="padding:8px 24px 6px 24px;">
-                <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#111;">Dubai Chambers – International</div>
+              <td style="padding:10px 24px 6px 24px;">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#111;display:inline-block;padding-bottom:6px;border-bottom:2px solid #1B6B3A;">Dubai Chambers – International</div>
               </td>
             </tr>
-            <tr>
-              <td style="padding:0 24px 10px 24px;">
-                ${internationalServices
-                  .map(
-                    (service) => `
-                  <div style="margin-bottom:18px;">
-                    <div style="font-family:Arial,Helvetica,sans-serif;font-weight:bold;font-size:14px;color:#111;">${service}</div>
-                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:4px;line-height:18px;">${serviceDescriptions[service] || ""}</div>
-                    <div style="margin-top:6px;"><a href="${serviceLinks[service] || "#"}" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#003B5C;text-decoration:none;">View Service →</a></div>
-                  </div>
-                `
-                  )
-                  .join("")}
-              </td>
-            </tr>
+            ${renderChamberSection(logoInternational, internationalServices, "#1B6B3A")}
             `
               : ""}
-
             ${digitalServices.length
               ? `
             <tr>
-              <td style="padding:8px 24px 6px 24px;">
-                <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#111;">Dubai Chambers – Digital</div>
+              <td style="padding:10px 24px 6px 24px;">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#111;display:inline-block;padding-bottom:6px;border-bottom:2px solid #0B5FA5;">Dubai Chambers – Digital</div>
               </td>
             </tr>
-            <tr>
-              <td style="padding:0 24px 6px 24px;">
-                ${digitalServices
-                  .map(
-                    (service) => `
-                  <div style="margin-bottom:18px;">
-                    <div style="font-family:Arial,Helvetica,sans-serif;font-weight:bold;font-size:14px;color:#111;">${service}</div>
-                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:4px;line-height:18px;">${serviceDescriptions[service] || ""}</div>
-                    <div style="margin-top:6px;"><a href="${serviceLinks[service] || "#"}" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#003B5C;text-decoration:none;">View Service →</a></div>
-                  </div>
-                `
-                  )
-                  .join("")}
-              </td>
-            </tr>
+            ${renderChamberSection(logoDigital, digitalServices, "#0B5FA5")}
             `
               : ""}
-
             <tr>
-              <td style="padding:8px 24px 0 24px;">
-                <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#111;">Corporate Service Providers</div>
-                <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:6px;line-height:18px;">
-                  Access a curated network of trusted partners supporting operational, financial, and advisory services across Dubai and international markets.
-                </div>
-                <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:6px;">
-                  Banking · Cloud · HR · Legal · Telecom · and more
-                </div>
-                <div style="margin-top:6px;">
-                  <a href="https://www.dubaichambers.com/en/corporate-service-providers" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#003B5C;text-decoration:none;">
-                    Explore Corporate Service Providers →
-                  </a>
-                </div>
+              <td style="padding:10px 24px 6px 24px;">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#111;display:inline-block;padding-bottom:6px;border-bottom:2px solid #374151;">Corporate Service Providers</div>
               </td>
             </tr>
-
+            <tr>
+              <td style="padding:12px 24px;">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;line-height:18px;">Access a curated network of trusted partners supporting operational, financial, and advisory services.</div>
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:6px;">Banking · Cloud · HR · Legal · Telecom · and more</div>
+                <div style="margin-top:6px;"><a href="https://www.dubaichambers.com/en/corporate-service-providers" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#003B5C;text-decoration:none;">Explore Corporate Service Providers →</a></div>
+              </td>
+            </tr>
             <tr>
               <td align="center" style="padding:18px 24px 16px 24px;">
                 <a href="https://www.dubaichambers.com/en/contact-us"
@@ -342,7 +266,6 @@ function generateTemplate(
                 </a>
               </td>
             </tr>
-
             <tr>
               <td style="padding:14px 24px 18px 24px;border-top:1px solid #eef0f3;">
                 <div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6b7280;line-height:16px;">
