@@ -168,75 +168,185 @@ function generateTemplate(
     `;
   }
 
+  const hasMembership = Array.isArray(services) && services.includes("Become a Member");
+
   return `
   <div style="margin:0;padding:0;background:#f3f4f6;">
-    <table width="100%" cellpadding="0" cellspacing="0">
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
       <tr>
-        <td align="center" style="padding:30px 12px;">
-          <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;border:1px solid #e5e7eb;">
-            
+        <td align="center" style="padding:28px 12px;">
+          <table width="600" cellpadding="0" cellspacing="0" role="presentation" style="background:#ffffff;border-radius:12px;border:1px solid #e5e7eb;">
+
             <tr>
-              <td style="padding:20px 24px;border-bottom:1px solid #eef0f3;">
-                <img src="${logoMain}" width="200" style="display:block;border:0;height:auto;" />
+              <td style="padding:18px 24px;">
+                <img src="${logoMain}" width="180" style="display:block;border:0;height:auto;" />
               </td>
             </tr>
 
             <tr>
-              <td style="padding:18px 24px;">
-                <div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#111;">
-                  Your personalized service shortlist
-                </div>
-                <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:6px;">
-                  Based on your selected activity and scope.
+              <td style="padding:0 24px 10px 24px;">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#111;line-height:24px;">
+                  Your Dubai Chambers Advisory Summary
                 </div>
               </td>
             </tr>
 
             <tr>
               <td style="padding:0 24px 16px 24px;">
-                <table width="100%" cellpadding="0" cellspacing="0" style="background:#fafafa;border:1px solid #eef0f3;border-radius:10px;">
+                <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f9fafb;border:1px solid #eef0f3;border-radius:10px;">
                   <tr>
-                    <td style="padding:12px 14px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;">
-                      <strong>Activity:</strong> ${activity}<br/>
-                      <strong>Scope:</strong> ${scope}
+                    <td style="padding:12px 14px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;line-height:18px;">
+                      <div><strong>Activity:</strong> ${activity}</div>
+                      <div style="margin-top:4px;"><strong>Scope:</strong> ${scope}</div>
                     </td>
                   </tr>
                 </table>
               </td>
             </tr>
 
-            <!-- Membership always first -->
             <tr>
-              <td style="padding:0 24px 20px 24px;">
-                <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eef0f3;border-radius:10px;">
-                  <tr>
-                    <td style="padding:14px;">
-                      <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#111;">
-                        Membership (Recommended Starting Point)
-                      </div>
-                      <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:6px;">
-                        Support, growth, and global reach — all in one membership.
-                      </div>
-                      <div style="margin-top:10px;">
-                        <a href="https://www.dubaichambers.com/en/new-membership"
-                           style="display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#ffffff;background:#7a0019;text-decoration:none;padding:10px 14px;border-radius:8px;">
-                          Explore Membership
-                        </a>
-                      </div>
-                    </td>
-                  </tr>
-                </table>
+              <td style="padding:0 24px 8px 24px;">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#111;">
+                  Recommended Services
+                </div>
               </td>
             </tr>
 
-            ${renderChamberSection(logoCommerce, commerceServices, "#7a0019")}
-            ${renderChamberSection(logoInternational, internationalServices, "#1b6b3a")}
-            ${renderChamberSection(logoDigital, digitalServices, "#0b5fa5")}
-
             <tr>
-              <td style="padding:18px 24px;background:#fafafa;border-top:1px solid #eef0f3;">
+              <td style="padding:0 24px 8px 24px;">
                 <div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6b7280;">
-                  This email was generated based on your advisory selections.
+                  Explore the services below. Each link will take you to the official Dubai Chambers page.
+                </div>
+              </td>
+            </tr>
+
+            ${hasMembership
+              ? `
+            <tr>
+              <td style="padding:0 24px 14px 24px;">
+                <div style="margin-bottom:18px;">
+                  <div style="font-family:Arial,Helvetica,sans-serif;font-weight:bold;font-size:14px;color:#111;">
+                    Become a Member
+                  </div>
+                  <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:4px;line-height:18px;">
+                    ${"Unlock full access to Chamber services."}
+                  </div>
+                  <div style="margin-top:6px;">
+                    <a href="https://www.dubaichambers.com/en/new-membership" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#003B5C;text-decoration:none;">
+                      View Service →
+                    </a>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            `
+              : ""}
+
+            ${commerceServices.length
+              ? `
+            <tr>
+              <td style="padding:8px 24px 6px 24px;">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#111;">Dubai Chambers – Commerce</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 24px 10px 24px;">
+                ${commerceServices
+                  .map(
+                    (service) => `
+                  <div style="margin-bottom:18px;">
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-weight:bold;font-size:14px;color:#111;">${service}</div>
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:4px;line-height:18px;">${serviceDescriptions[service] || ""}</div>
+                    <div style="margin-top:6px;"><a href="${serviceLinks[service] || "#"}" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#003B5C;text-decoration:none;">View Service →</a></div>
+                  </div>
+                `
+                  )
+                  .join("")}
+              </td>
+            </tr>
+            `
+              : ""}
+
+            ${internationalServices.length
+              ? `
+            <tr>
+              <td style="padding:8px 24px 6px 24px;">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#111;">Dubai Chambers – International</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 24px 10px 24px;">
+                ${internationalServices
+                  .map(
+                    (service) => `
+                  <div style="margin-bottom:18px;">
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-weight:bold;font-size:14px;color:#111;">${service}</div>
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:4px;line-height:18px;">${serviceDescriptions[service] || ""}</div>
+                    <div style="margin-top:6px;"><a href="${serviceLinks[service] || "#"}" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#003B5C;text-decoration:none;">View Service →</a></div>
+                  </div>
+                `
+                  )
+                  .join("")}
+              </td>
+            </tr>
+            `
+              : ""}
+
+            ${digitalServices.length
+              ? `
+            <tr>
+              <td style="padding:8px 24px 6px 24px;">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#111;">Dubai Chambers – Digital</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 24px 6px 24px;">
+                ${digitalServices
+                  .map(
+                    (service) => `
+                  <div style="margin-bottom:18px;">
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-weight:bold;font-size:14px;color:#111;">${service}</div>
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:4px;line-height:18px;">${serviceDescriptions[service] || ""}</div>
+                    <div style="margin-top:6px;"><a href="${serviceLinks[service] || "#"}" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#003B5C;text-decoration:none;">View Service →</a></div>
+                  </div>
+                `
+                  )
+                  .join("")}
+              </td>
+            </tr>
+            `
+              : ""}
+
+            <tr>
+              <td style="padding:8px 24px 0 24px;">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#111;">Corporate Service Providers</div>
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:6px;line-height:18px;">
+                  Access a curated network of trusted partners supporting operational, financial, and advisory services across Dubai and international markets.
+                </div>
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:6px;">
+                  Banking · Cloud · HR · Legal · Telecom · and more
+                </div>
+                <div style="margin-top:6px;">
+                  <a href="https://www.dubaichambers.com/en/corporate-service-providers" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#003B5C;text-decoration:none;">
+                    Explore Corporate Service Providers →
+                  </a>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td align="center" style="padding:18px 24px 16px 24px;">
+                <a href="https://www.dubaichambers.com/en/contact-us"
+                   style="display:inline-block;font-family:Arial,Helvetica,sans-serif;background:#003B5C;color:#ffffff;padding:12px 22px;border-radius:8px;font-weight:bold;text-decoration:none;">
+                  Contact Dubai Chambers Advisor
+                </a>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:14px 24px 18px 24px;border-top:1px solid #eef0f3;">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6b7280;line-height:16px;">
+                  This email was generated based on your advisory selections. Service availability may depend on eligibility criteria and documentation requirements.
                 </div>
               </td>
             </tr>
