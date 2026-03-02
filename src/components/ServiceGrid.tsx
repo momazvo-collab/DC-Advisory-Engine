@@ -8,7 +8,7 @@ export function ServiceGrid({ services }: any) {
         <Card key={service.id} className="rounded-2xl shadow-sm border border-[#E2E8F0] bg-white">
           <CardContent className="p-6">
             <h3 className="text-lg font-semibold text-[#003B5C] mb-1">{service.title}</h3>
-            <p className="text-sm text-gray-600">Service eligibility preview.</p>
+            <p className="text-sm text-gray-600 leading-relaxed">{service.shortDescription || ""}</p>
           </CardContent>
         </Card>
       ))}

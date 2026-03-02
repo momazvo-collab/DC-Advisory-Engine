@@ -5,6 +5,7 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
+  // ENV GUARD
   if (!process.env.RESEND_API_KEY) {
     console.error("Missing RESEND_API_KEY");
     return res.status(500).json({ error: "Email service not configured" });
@@ -15,7 +16,13 @@ export default async function handler(req: any, res: any) {
   try {
     const { email, activity, scope, services } = req.body || {};
 
-    if (!email || !activity || !scope || !Array.isArray(services)) {
+    // PAYLOAD VALIDATION
+    if (
+      !email ||
+      !activity ||
+      !scope ||
+      !Array.isArray(services)
+    ) {
       return res.status(400).json({ error: "Invalid request payload" });
     }
 
@@ -47,6 +54,7 @@ function generateTemplate(
   const logoInternational = `${BASE_URL}/logos/international.jpg`;
   const logoDigital = `${BASE_URL}/logos/digital.jpg`;
 
+  // Remove duplicate membership if resolver already includes it
   const filteredServices = services.filter(
     (s) => s !== "Become a Member"
   );
@@ -61,17 +69,17 @@ function generateTemplate(
     "ATA Carnet":
       "International customs document that permits the temporary importation of duty-free and tax-free business goods for up to one year.",
     "CSR":
-      "Benefit from guidance on responsible business practices and sustainability through initiatives like our ESG Label.",
+      "Benefit from guidance on responsible business practices and sustainability through initiatives like our ESG Label and the Centre for Responsible Business (CRB).",
     "Business Group and Council":
-      "Business Groups drive sector development, while Business Councils connect international investors and companies.",
+      "Business Groups bring together companies from key sectors to drive industry development and enhance the business environment, while Business Councils connect international investors and companies to strengthen cross-border partnerships and promote investment flows.",
     "Dubai Global":
-      "Connect with our international offices worldwide to unlock global growth opportunities.",
+      "We maintain a growing network of 35+ international offices around the world, helping you connect with the right partners and unlock global growth.",
     "New Horizons":
-      "Explore international expansion opportunities through targeted trade missions.",
+      "Explore opportunities for international expansion through targeted trade missions.",
     "Business in Dubai":
-      "Digital platform simplifying business setup and expansion in Dubai.",
+      "Our unique digital platform simplifies a wide range of processes for companies seeking to launch or expand their activities in Dubai and accelerates growth through business-matching services.",
     "Expand North Star":
-      "World’s largest startup and investor event connecting founders and global capital."
+      "World’s largest event for startups and investors, attracting 1,800 startups and 1,200 investors with assets under management of US$ 1 trillion in 2024."
   };
 
   const serviceLinks: Record<string, string> = {
@@ -85,7 +93,8 @@ function generateTemplate(
       "https://www.dubaichambers.com/en/issuance-of-ata-carnet",
     "CSR":
       "https://www.dubaichambers.com/en/dubai-chamber-of-commerce-esg-label",
-    "Business Group and Council": "#",
+    "Business Group and Council":
+      "#",
     "Dubai Global":
       "https://leads.dubaichamber.com/en/contact",
     "New Horizons":
@@ -196,6 +205,7 @@ function generateTemplate(
               </td>
             </tr>
 
+            <!-- Membership always first -->
             <tr>
               <td style="padding:0 24px 20px 24px;">
                 <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eef0f3;border-radius:10px;">

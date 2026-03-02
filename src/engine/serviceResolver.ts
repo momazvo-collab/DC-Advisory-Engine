@@ -80,6 +80,7 @@ export interface ServiceCard {
   id: string;
   title: string;
   category: "commerce" | "local" | "international" | "membership";
+  shortDescription: string;
 }
 
 // ============================================================================
@@ -90,57 +91,68 @@ const SERVICE_REGISTRY: Record<string, ServiceCard> = {
   coo: {
     id: "coo",
     title: "Certificate of Origin",
-    category: "commerce"
+    category: "commerce",
+    shortDescription: "Certify goods for international trade."
   },
   ata: {
     id: "ata",
     title: "ATA Carnet",
-    category: "commerce"
+    category: "commerce",
+    shortDescription: "Temporarily import goods duty-free."
   },
   csr: {
     id: "csr",
     title: "CSR",
-    category: "commerce"
+    category: "commerce",
+    shortDescription: "Strengthen sustainability and ESG practices."
   },
   business_group_and_council: {
     id: "business_group_and_council",
     title: "Business Group and Council",
-    category: "commerce"
+    category: "commerce",
+    shortDescription: "Connect with industry leaders and global partners."
   },
   attestation: {
     id: "attestation",
     title: "Document Attestation",
-    category: "commerce"
+    category: "commerce",
+    shortDescription: "Validate documents for official use."
   },
   mediation: {
     id: "mediation",
     title: "Commercial Mediation",
-    category: "commerce"
+    category: "commerce",
+    shortDescription: "Resolve commercial disputes efficiently."
   },
   business_in_dubai: {
     id: "business_in_dubai",
     title: "Business in Dubai",
-    category: "local"
+    category: "local",
+    shortDescription: "Simplify business setup and expansion."
   },
   expand_north_star: {
     id: "expand_north_star",
     title: "Expand North Star",
-    category: "local"
+    category: "local",
+    shortDescription: "Access global startups and investors."
   },
   dubai_global: {
     id: "dubai_global",
     title: "Dubai Global",
-    category: "international"
+    category: "international",
+    shortDescription: "Expand through our global office network."
   },
   new_horizons: {
     id: "new_horizons",
     title: "New Horizons",
-    category: "international"
+    category: "international",
+    shortDescription: "Explore new markets through trade missions."
   },
   become_member: {
     id: "become_member",
     title: "Become a Member",
-    category: "membership"
+    category: "membership",
+    shortDescription: "Unlock full access to Chamber services."
   }
 };
 

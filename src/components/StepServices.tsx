@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, CardContent, Button } from "./ui";
+import { Button } from "./ui";
 import { ServiceGrid } from "./ServiceGrid";
 import { REGION_OFFICES } from "../data/regionOffices";
 
@@ -42,9 +42,8 @@ export function StepServices({ services, location, scope, region, activity, onBa
 
       {membershipServices.length > 0 && (
         <div className="border border-[#0077B6] rounded-2xl p-6 bg-white shadow-sm">
-          <div className="text-lg font-semibold text-[#003B5C]">Become a Member of Dubai Chambers</div>
-          <p className="text-sm text-gray-600 mt-2">Businesses not registered in Dubai must obtain Dubai Chambers membership to access certain services.</p>
-          <Button className="mt-4 bg-[#0077B6] hover:bg-[#005F8A]">Become a Member</Button>
+          <h3 className="text-xl font-semibold text-[#003B5C] mb-4">Membership</h3>
+          <ServiceGrid services={membershipServices} />
         </div>
       )}
 
@@ -72,27 +71,23 @@ export function StepServices({ services, location, scope, region, activity, onBa
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-            {internationalServices.map((service: any) => (
-              <Card key={service.id} className="rounded-2xl border border-[#E2E8F0] hover:shadow-md transition-all bg-white">
-                <CardContent className="p-8">
-                  <h3 className="text-lg font-semibold text-[#003B5C] mb-2">{service.title}</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">Service eligibility based on selected business profile.</p>
+          <ServiceGrid services={internationalServices} />
 
-                  {service.id === "dubai_global" && region && regionCountries.length > 0 && (
-                    <div className="mt-6">
-                      <div className="text-sm font-semibold text-[#2E8B57] mb-3">Supported Countries in {region}</div>
-                      <div className="flex flex-wrap gap-2">
-                        {regionCountries.map((country: any) => (
-                          <div key={country.code} className="px-3 py-1 rounded-full bg-[#EAF7EF] text-sm text-[#2E8B57] border border-[#CDEBD8]">{country.name}</div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {region && regionCountries.length > 0 && (
+            <div className="mt-8">
+              <div className="text-sm font-semibold text-[#2E8B57] mb-3">Supported Countries in {region}</div>
+              <div className="flex flex-wrap gap-2">
+                {regionCountries.map((country: any) => (
+                  <div
+                    key={country.code}
+                    className="px-3 py-1 rounded-full bg-white text-sm font-medium text-[#2E8B57] border border-[#2E8B57]"
+                  >
+                    {country.name}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
