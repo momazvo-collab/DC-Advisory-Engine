@@ -22,7 +22,7 @@ export default async function handler(req: any, res: any) {
 
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    const { error } = await supabase.from("events").insert(body);
+    const { error } = await supabase.from("events").insert([body]);
 
     if (error) {
       console.error("Track API Supabase insert error:", error);
