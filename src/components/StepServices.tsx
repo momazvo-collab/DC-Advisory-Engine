@@ -24,21 +24,35 @@ export function StepServices({ services, location, scope, region, activity, onBa
 
   return (
     <div className="space-y-10">
-      <h2 className="text-2xl font-semibold text-[#003B5C]">Eligible Services</h2>
-
-      <div className="flex flex-wrap gap-3">
-        {location?.base && <div className="px-3 py-1 rounded-full bg-gray-100 text-sm">{location.base}</div>}
-        {scope && <div className="px-3 py-1 rounded-full bg-gray-100 text-sm">{scope}</div>}
-        {activity && <div className="px-3 py-1 rounded-full bg-gray-100 text-sm">{activity.activity_name}</div>}
-      </div>
+      <h2 className="text-2xl font-semibold text-[#003B5C]">Your Advisory Summary</h2>
 
       {activity && (
         <div className="border border-[#E2E8F0] rounded-2xl p-6 bg-blue-50">
-          <div className="text-xs text-gray-600">Selected Activity</div>
+          <div className="mt-3 flex flex-wrap gap-6 text-sm text-gray-700">
+            {location?.base && (
+              <div>
+                <span className="font-medium text-gray-600">Location:</span>{" "}
+                {location?.base === "International" && location?.country
+                  ? location.country
+                  : location?.base === "UAE" && location?.emirate
+                    ? location.emirate
+                    : location?.base}
+              </div>
+            )}
+
+            {scope && (
+              <div>
+                <span className="font-medium text-gray-600">Scope:</span>{" "}
+                {scope === "International" && region ? `International – ${region}` : scope}
+              </div>
+            )}
+          </div>
           <div className="text-lg font-semibold text-[#003B5C] mt-1">{activity.activity_name}</div>
           <div className="text-sm text-gray-600 mt-1">{activity.sector} • {activity.subsector}</div>
         </div>
       )}
+
+      <h3 className="text-xl font-semibold text-[#003B5C] mt-8">Recommended Services</h3>
 
       {membershipServices.length > 0 && (
         <div className="border border-[#0077B6] rounded-2xl p-6 bg-white shadow-sm">
@@ -90,6 +104,29 @@ export function StepServices({ services, location, scope, region, activity, onBa
           )}
         </div>
       )}
+
+      <div className="rounded-2xl border border-gray-300 bg-gray-50 p-6 mt-8">
+        <h3 className="text-xl font-semibold text-[#003B5C] mb-2">Corporate Service Providers</h3>
+
+        <p className="text-sm text-gray-600 mb-4">
+          Access a curated network of trusted partners supporting operational, financial, and advisory services across Dubai and international markets.
+        </p>
+
+        <div className="flex flex-wrap gap-3">
+          {[
+            "Banking",
+            "Cloud Services",
+            "HR & Payroll",
+            "Legal Advisory",
+            "Telecommunications",
+            "+ Additional verified partners"
+          ].map((item) => (
+            <div key={item} className="px-4 py-2 rounded-full bg-white text-sm text-[#003B5C] border border-gray-300">
+              {item}
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="space-y-4">
         <button
