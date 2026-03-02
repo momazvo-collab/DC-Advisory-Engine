@@ -1,16 +1,33 @@
+import { createClient } from "@supabase/supabase-js";
+
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
   try {
-    const { event_name, ...rest } = req.body || {};
+    const body = req.body || {};
 
-    if (!event_name) {
+    if (!body?.event_name) {
       return res.status(400).json({ error: "Missing event_name" });
     }
 
-    console.log("track_event", { event_name, ...rest });
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      console.error("Track API error: Missing Supabase environment variables");
+      return res.status(500).json({ error: "Failed to track event" });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+    const { error } = await supabase.from("events").insert(body);
+
+    if (error) {
+      console.error("Track API Supabase insert error:", error);
+      return res.status(500).json({ error: "Failed to track event" });
+    }
 
     return res.status(200).json({ success: true });
   } catch (error) {
