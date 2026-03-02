@@ -2,10 +2,27 @@ import React from "react";
 import { Button } from "./ui";
 import { ServiceGrid } from "./ServiceGrid";
 import { REGION_OFFICES } from "../data/regionOffices";
+import { getOrCreateSessionId, trackEvent } from "../lib/tracking";
 
 export function StepServices({ services, location, scope, region, activity, onBack }: any) {
   const [isEmailOpen, setIsEmailOpen] = React.useState(false);
   const [email, setEmail] = React.useState("");
+
+  const advisoryIdRef = React.useRef<string>(crypto.randomUUID());
+
+  React.useEffect(() => {
+    getOrCreateSessionId();
+    trackEvent("results_viewed", {
+      advisory_id: advisoryIdRef.current,
+      activity_id: activity?.activity_id,
+      sector: activity?.sector,
+      subsector: activity?.subsector,
+      scope,
+      location_base: location?.base,
+      region,
+      services: (services || []).map((s: any) => s.id),
+    });
+  }, []);
 
   const commerceServices = services.filter((s: any) => s.category === "commerce");
   const localServices = services.filter((s: any) => s.category === "local");
@@ -156,6 +173,11 @@ export function StepServices({ services, location, scope, region, activity, onBa
                   }
 
                   try {
+                    trackEvent("email_submitted", {
+                      advisory_id: advisoryIdRef.current,
+                      service_count: services.length,
+                    });
+
                     const resp = await fetch("/api/send-email", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
