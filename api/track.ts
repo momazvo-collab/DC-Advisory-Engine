@@ -41,7 +41,11 @@ export default async function handler(req: any, res: any) {
 
     if (error) {
       console.error("Track API Supabase insert error:", error);
-      return res.status(500).json({ error: "Failed to track event" });
+      return res.status(500).json({
+        error: error.message,
+        details: (error as any).details ?? null,
+        hint: (error as any).hint ?? null,
+      });
     }
 
     return res.status(200).json({ success: true });
