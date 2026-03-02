@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import crypto from "crypto";
 
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
@@ -26,7 +27,16 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: "Invalid request payload" });
     }
 
-    const html = generateTemplate(activity, scope, services);
+    const advisoryId = crypto.randomUUID();
+    const messageId = crypto.randomUUID();
+
+    const html = generateTemplate(
+      activity,
+      scope,
+      services,
+      advisoryId,
+      messageId
+    );
 
     await resend.emails.send({
       from: "onboarding@resend.dev",
@@ -45,9 +55,17 @@ export default async function handler(req: any, res: any) {
 function generateTemplate(
   activity: string,
   scope: string,
-  services: string[]
+  services: string[],
+  advisoryId: string,
+  messageId: string
 ) {
   const BASE_URL = "https://dc-advisory-engine.vercel.app";
+
+  function buildTrackedLink(serviceKey: string, originalUrl: string) {
+    return `${BASE_URL}/api/r?m=${messageId}&a=${advisoryId}&k=${encodeURIComponent(
+      serviceKey
+    )}&u=${encodeURIComponent(originalUrl)}`;
+  }
 
   const logoMain = `${BASE_URL}/logos/chambers.jpg`;
   const logoCommerce = `${BASE_URL}/logos/commerce.jpg`;
@@ -135,7 +153,7 @@ function generateTemplate(
             ${serviceDescriptions[service] || ""}
           </div>
           <div style="margin-top:6px;">
-            <a href="${serviceLinks[service] || "#"}"
+            <a href="${buildTrackedLink(service, serviceLinks[service] || "#")}"
                style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#003B5C;text-decoration:none;">
               View Service →
             </a>
@@ -210,7 +228,10 @@ function generateTemplate(
                 <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#111;">Become a Member</div>
                 <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:4px;line-height:18px;">${"Unlock full access to Chamber services."}</div>
                 <div style="margin-top:6px;">
-                  <a href="https://www.dubaichambers.com/en/new-membership" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#003B5C;text-decoration:none;">View Service →</a>
+                  <a href="${buildTrackedLink(
+                    "Become a Member",
+                    "https://www.dubaichambers.com/en/new-membership"
+                  )}" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#003B5C;text-decoration:none;">View Service →</a>
                 </div>
               </td>
             </tr>
@@ -255,12 +276,18 @@ function generateTemplate(
               <td style="padding:12px 24px;">
                 <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;line-height:18px;">Access a curated network of trusted partners supporting operational, financial, and advisory services.</div>
                 <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#555;margin-top:6px;">Banking · Cloud · HR · Legal · Telecom · and more</div>
-                <div style="margin-top:6px;"><a href="https://www.dubaichambers.com/en/corporate-service-providers" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#003B5C;text-decoration:none;">Explore Corporate Service Providers →</a></div>
+                <div style="margin-top:6px;"><a href="${buildTrackedLink(
+                  "corporate_service_providers",
+                  "https://www.dubaichambers.com/en/corporate-service-providers"
+                )}" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#003B5C;text-decoration:none;">Explore Corporate Service Providers →</a></div>
               </td>
             </tr>
             <tr>
               <td align="center" style="padding:18px 24px 16px 24px;">
-                <a href="https://www.dubaichambers.com/en/contact-us"
+                <a href="${buildTrackedLink(
+                  "contact_advisor",
+                  "https://www.dubaichambers.com/en/contact-us"
+                )}"
                    style="display:inline-block;font-family:Arial,Helvetica,sans-serif;background:#003B5C;color:#ffffff;padding:12px 22px;border-radius:8px;font-weight:bold;text-decoration:none;">
                   Contact Dubai Chambers Advisor
                 </a>
