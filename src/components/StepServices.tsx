@@ -4,7 +4,14 @@ import { ServiceGrid } from "./ServiceGrid";
 import { REGION_OFFICES } from "../data/regionOffices";
 import { getOrCreateSessionId, trackEvent } from "../lib/tracking";
 
-export function StepServices({ services, location, scope, region, activity, onBack }: any) {
+export function StepServices({
+  services,
+  location,
+  scope,
+  region,
+  activity,
+  onBack,
+}: any) {
   const [isEmailOpen, setIsEmailOpen] = React.useState(false);
   const [email, setEmail] = React.useState("");
 
@@ -12,6 +19,7 @@ export function StepServices({ services, location, scope, region, activity, onBa
 
   React.useEffect(() => {
     getOrCreateSessionId();
+
     trackEvent("results_viewed", {
       advisory_id: advisoryIdRef.current,
       activity_id: activity?.activity_id,
@@ -19,6 +27,8 @@ export function StepServices({ services, location, scope, region, activity, onBa
       subsector: activity?.subsector,
       scope,
       location_base: location?.base,
+      emirate: location?.emirate ?? null,
+      country: location?.country ?? null,
       region,
       services: (services || []).map((s: any) => s.id),
     });
@@ -32,16 +42,25 @@ export function StepServices({ services, location, scope, region, activity, onBa
   const commerceServicesSorted = React.useMemo(() => {
     const pinnedTitles = ["Certificate of Origin", "ATA Carnet"] as const;
 
-    const pinned = pinnedTitles.flatMap((t) => commerceServices.filter((s: any) => s.title === t));
-    const rest = commerceServices.filter((s: any) => !pinnedTitles.includes(s.title));
+    const pinned = pinnedTitles.flatMap((t) =>
+      commerceServices.filter((s: any) => s.title === t)
+    );
+    const rest = commerceServices.filter(
+      (s: any) => !pinnedTitles.includes(s.title)
+    );
+
     return [...pinned, ...rest];
   }, [commerceServices]);
 
-  const regionCountries = region ? (REGION_OFFICES as any).find((r: any) => r.name === region)?.countries || [] : [];
+  const regionCountries = region
+    ? (REGION_OFFICES as any).find((r: any) => r.name === region)?.countries || []
+    : [];
 
   return (
     <div className="space-y-10">
-      <h2 className="text-2xl font-semibold text-[#003B5C]">Your Advisory Summary</h2>
+      <h2 className="text-2xl font-semibold text-[#003B5C]">
+        Your Advisory Summary
+      </h2>
 
       {activity && (
         <div className="border border-[#E2E8F0] rounded-2xl p-6 bg-blue-50">
@@ -52,49 +71,66 @@ export function StepServices({ services, location, scope, region, activity, onBa
                 {location?.base === "International" && location?.country
                   ? location.country
                   : location?.base === "UAE" && location?.emirate
-                    ? location.emirate
-                    : location?.base}
+                  ? location.emirate
+                  : location?.base}
               </div>
             )}
 
             {scope && (
               <div>
                 <span className="font-medium text-gray-600">Scope:</span>{" "}
-                {scope === "International" && region ? `International – ${region}` : scope}
+                {scope === "International" && region
+                  ? `International – ${region}`
+                  : scope}
               </div>
             )}
           </div>
-          <div className="text-lg font-semibold text-[#003B5C] mt-1">{activity.activity_name}</div>
-          <div className="text-sm text-gray-600 mt-1">{activity.sector} • {activity.subsector}</div>
+
+          <div className="text-lg font-semibold text-[#003B5C] mt-1">
+            {activity.activity_name}
+          </div>
+          <div className="text-sm text-gray-600 mt-1">
+            {activity.sector} • {activity.subsector}
+          </div>
         </div>
       )}
 
-      <h3 className="text-xl font-semibold text-[#003B5C] mt-8">Recommended Services</h3>
+      <h3 className="text-xl font-semibold text-[#003B5C] mt-8">
+        Recommended Services
+      </h3>
 
       {membershipServices.length > 0 && (
         <div className="border border-[#0077B6] rounded-2xl p-6 bg-white shadow-sm">
-          <h3 className="text-xl font-semibold text-[#003B5C] mb-4">Membership</h3>
+          <h3 className="text-xl font-semibold text-[#003B5C] mb-4">
+            Membership
+          </h3>
           <ServiceGrid services={membershipServices} />
         </div>
       )}
 
       {commerceServices.length > 0 && (
         <div className="rounded-2xl border border-[#800020] bg-[#FAF2F4] p-6">
-          <h3 className="text-xl font-semibold text-[#800020] mb-4">Dubai Chambers – Commerce</h3>
+          <h3 className="text-xl font-semibold text-[#800020] mb-4">
+            Dubai Chambers – Commerce
+          </h3>
           <ServiceGrid services={commerceServicesSorted} />
         </div>
       )}
 
       {scope === "Local" && localServices.length > 0 && (
         <div className="rounded-2xl border border-[#0077B6] bg-[#E6F4FA] p-6">
-          <h3 className="text-xl font-semibold text-[#0077B6] mb-4">Dubai Chambers – Digital</h3>
+          <h3 className="text-xl font-semibold text-[#0077B6] mb-4">
+            Dubai Chambers – Digital
+          </h3>
           <ServiceGrid services={localServices} />
         </div>
       )}
 
       {scope === "International" && internationalServices.length > 0 && (
         <div className="rounded-2xl border border-[#2E8B57] bg-[#EAF7EF] p-6">
-          <h3 className="text-xl font-semibold text-[#2E8B57] mb-2">Dubai Chambers – International</h3>
+          <h3 className="text-xl font-semibold text-[#2E8B57] mb-2">
+            Dubai Chambers – International
+          </h3>
 
           {region && (
             <div className="mb-6 inline-flex items-center px-4 py-2 rounded-full bg-white border border-[#2E8B57] text-sm font-medium text-[#2E8B57]">
@@ -106,7 +142,9 @@ export function StepServices({ services, location, scope, region, activity, onBa
 
           {region && regionCountries.length > 0 && (
             <div className="mt-8">
-              <div className="text-sm font-semibold text-[#2E8B57] mb-3">Supported Countries in {region}</div>
+              <div className="text-sm font-semibold text-[#2E8B57] mb-3">
+                Supported Countries in {region}
+              </div>
               <div className="flex flex-wrap gap-2">
                 {regionCountries.map((country: any) => (
                   <div
@@ -123,26 +161,14 @@ export function StepServices({ services, location, scope, region, activity, onBa
       )}
 
       <div className="rounded-2xl border border-gray-300 bg-gray-50 p-6 mt-8">
-        <h3 className="text-xl font-semibold text-[#003B5C] mb-2">Corporate Service Providers</h3>
+        <h3 className="text-xl font-semibold text-[#003B5C] mb-2">
+          Corporate Service Providers
+        </h3>
 
         <p className="text-sm text-gray-600 mb-4">
-          Access a curated network of trusted partners supporting operational, financial, and advisory services across Dubai and international markets.
+          Access a curated network of trusted partners supporting operational,
+          financial, and advisory services across Dubai and international markets.
         </p>
-
-        <div className="flex flex-wrap gap-3">
-          {[
-            "Banking",
-            "Cloud Services",
-            "HR & Payroll",
-            "Legal Advisory",
-            "Telecommunications",
-            "+ Additional verified partners"
-          ].map((item) => (
-            <div key={item} className="px-4 py-2 rounded-full bg-white text-sm text-[#003B5C] border border-gray-300">
-              {item}
-            </div>
-          ))}
-        </div>
       </div>
 
       <div className="space-y-4">
@@ -176,6 +202,11 @@ export function StepServices({ services, location, scope, region, activity, onBa
                     trackEvent("email_submitted", {
                       advisory_id: advisoryIdRef.current,
                       service_count: services.length,
+                      scope,
+                      location_base: location?.base,
+                      emirate: location?.emirate ?? null,
+                      country: location?.country ?? null,
+                      region,
                     });
 
                     const resp = await fetch("/api/send-email", {
@@ -205,12 +236,16 @@ export function StepServices({ services, location, scope, region, activity, onBa
                 Send
               </button>
             </div>
-            <div className="mt-2 text-xs text-gray-500">We will send your selected services summary.</div>
+            <div className="mt-2 text-xs text-gray-500">
+              We will send your selected services summary.
+            </div>
           </div>
         )}
 
         <div className="flex justify-start">
-          <Button variant="outline" onClick={onBack}>Back</Button>
+          <Button variant="outline" onClick={onBack}>
+            Back
+          </Button>
         </div>
       </div>
     </div>
