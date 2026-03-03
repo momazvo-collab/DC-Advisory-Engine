@@ -13,19 +13,21 @@ export default async function handler(req: any, res: any) {
     }
 
     const eventData = {
-      event_name: body.event_name,
-      session_id: body.session_id ?? null,
-      advisory_id: body.advisory_id ?? null,
-      message_id: body.message_id ?? null,
-      service_id: body.service_id ?? null,
-      activity_id: body.activity_id ?? null,
-      sector: body.sector ?? null,
-      subsector: body.subsector ?? null,
-      scope: body.scope ?? null,
-      location_base: body.location_base ?? null,
-      region: body.region ?? null,
-      metadata: body.metadata ?? null,
-    };
+  event_name: body.event_name,
+  session_id: body.session_id ?? null,
+  advisory_id: body.advisory_id ?? null,
+  message_id: body.message_id ?? null,
+  service_id: body.service_id ?? null,
+  activity_id: body.activity_id ?? null,
+  sector: body.sector ?? null,
+  subsector: body.subsector ?? null,
+  scope: body.scope ?? null,
+  location_base: body.location_base ?? null,
+  emirate: body.emirate ?? null,        // ✅ NEW
+  country: body.country ?? null,        // ✅ NEW
+  region: body.region ?? null,
+  metadata: body.metadata ?? null,
+};
 
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
