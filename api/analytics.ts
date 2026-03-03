@@ -131,6 +131,36 @@ export default async function handler(req: any, res: any) {
     }
 
     // -------------------------------
+    // 5️⃣ Region Demand
+    // -------------------------------
+
+    const { data: regionDemand, error: regionError } =
+      await supabase.rpc("analytics_region_demand", {
+        p_from: dateFrom,
+        p_to: dateTo,
+      });
+
+    if (regionError) {
+      console.error("Region demand RPC error:", regionError);
+      return res.status(500).json({ error: "Failed to load region demand" });
+    }
+
+    // -------------------------------
+    // 6️⃣ Sector Demand
+    // -------------------------------
+
+    const { data: sectorDemand, error: sectorError } =
+      await supabase.rpc("analytics_sector_demand", {
+        p_from: dateFrom,
+        p_to: dateTo,
+      });
+
+    if (sectorError) {
+      console.error("Sector demand RPC error:", sectorError);
+      return res.status(500).json({ error: "Failed to load sector demand" });
+    }
+
+    // -------------------------------
     // Final Structured Response
     // -------------------------------
 
@@ -139,6 +169,8 @@ export default async function handler(req: any, res: any) {
       top_services: topServices ?? [],
       detailed_location: detailedLocation ?? [],
       activity_breakdown: activityBreakdown ?? [],
+      region_demand: regionDemand ?? [],
+      sector_demand: sectorDemand ?? [],
     });
 
   } catch (error) {

@@ -21,6 +21,16 @@ type ActivityBreakdown = {
   count: number;
 };
 
+type RegionDemand = {
+  region: string;
+  count: number;
+};
+
+type SectorDemand = {
+  sector: string;
+  count: number;
+};
+
 type Kpis = {
   results_viewed: number;
   email_submitted: number;
@@ -35,6 +45,8 @@ type AnalyticsResponse = {
   top_services: TopService[];
   detailed_location: DetailedLocation[];
   activity_breakdown: ActivityBreakdown[];
+  region_demand: RegionDemand[];
+  sector_demand: SectorDemand[];
 };
 
 function formatInt(value: number) {
@@ -91,7 +103,14 @@ export default function AdminDashboard() {
   if (error) return <div className="p-8 text-red-600">{error}</div>;
   if (!data) return null;
 
-  const { kpis, top_services, detailed_location, activity_breakdown } = data;
+  const {
+    kpis,
+    top_services,
+    detailed_location,
+    activity_breakdown,
+    region_demand,
+    sector_demand,
+  } = data;
 
   return (
     <div className="p-8 space-y-10">
@@ -107,46 +126,24 @@ export default function AdminDashboard() {
         <KpiCard label="Click Rate from Viewed" value={formatPct(kpis.email_click_rate_from_viewed)} />
       </div>
 
-      {/* THREE COLUMN GRID */}
+      {/* MAIN GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
         {/* Top Clicked Services */}
-        <div className="rounded-2xl border bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">
-            Top Clicked Email Services
-          </h2>
-
-          {top_services.length === 0 && (
-            <div className="text-sm text-gray-500">
-              No click data yet.
-            </div>
-          )}
-
+        <Panel title="Top Clicked Email Services">
+          {top_services.length === 0 && <Empty />}
           {top_services.map((service, i) => (
-            <div
+            <Row
               key={service.service_id}
-              className="flex justify-between py-2 border-b text-sm"
-            >
-              <span>{i + 1}. {service.service_id}</span>
-              <span className="font-semibold">
-                {formatInt(service.click_count)}
-              </span>
-            </div>
+              label={`${i + 1}. ${service.service_id}`}
+              value={formatInt(service.click_count)}
+            />
           ))}
-        </div>
+        </Panel>
 
-        {/* Location & Scope Breakdown */}
-        <div className="rounded-2xl border bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">
-            Location & Scope Breakdown
-          </h2>
-
-          {detailed_location.length === 0 && (
-            <div className="text-sm text-gray-500">
-              No location data yet.
-            </div>
-          )}
-
+        {/* Location & Scope */}
+        <Panel title="Location & Scope Breakdown">
+          {detailed_location.length === 0 && <Empty />}
           {detailed_location.map((row, i) => {
             const labelParts = [
               row.location_base,
@@ -157,47 +154,85 @@ export default function AdminDashboard() {
             ].filter(Boolean);
 
             return (
-              <div
+              <Row
                 key={i}
-                className="flex justify-between py-2 border-b text-sm"
-              >
-                <span>{labelParts.join(" → ")}</span>
-                <span className="font-semibold">
-                  {formatInt(row.count)}
-                </span>
-              </div>
+                label={labelParts.join(" → ")}
+                value={formatInt(row.count)}
+              />
             );
           })}
-        </div>
+        </Panel>
 
-        {/* Activity & Sector Breakdown */}
-        <div className="rounded-2xl border bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">
-            Top Activities & Sectors
-          </h2>
-
-          {activity_breakdown.length === 0 && (
-            <div className="text-sm text-gray-500">
-              No activity data yet.
-            </div>
-          )}
-
+        {/* Activity & Sector */}
+        <Panel title="Top Activities & Sectors">
+          {activity_breakdown.length === 0 && <Empty />}
           {activity_breakdown.slice(0, 10).map((row, i) => (
-            <div
+            <Row
               key={i}
-              className="flex justify-between py-2 border-b text-sm"
-            >
-              <span>
-                {row.sector} → {row.subsector}
-              </span>
-              <span className="font-semibold">
-                {formatInt(row.count)}
-              </span>
-            </div>
+              label={`${row.sector} → ${row.subsector}`}
+              value={formatInt(row.count)}
+            />
           ))}
-        </div>
+        </Panel>
 
       </div>
+
+      {/* SECOND GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        {/* Region Demand */}
+        <Panel title="Region Demand">
+          {region_demand.length === 0 && <Empty />}
+          {region_demand.map((row, i) => (
+            <Row
+              key={i}
+              label={row.region}
+              value={formatInt(row.count)}
+            />
+          ))}
+        </Panel>
+
+        {/* Sector Demand */}
+        <Panel title="Sector Demand">
+          {sector_demand.length === 0 && <Empty />}
+          {sector_demand.map((row, i) => (
+            <Row
+              key={i}
+              label={row.sector}
+              value={formatInt(row.count)}
+            />
+          ))}
+        </Panel>
+
+      </div>
+    </div>
+  );
+}
+
+/* ---------- UI Helpers ---------- */
+
+function Panel({ title, children }: any) {
+  return (
+    <div className="rounded-2xl border bg-white p-6 shadow-sm">
+      <h2 className="text-lg font-semibold mb-4">{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between py-2 border-b text-sm">
+      <span>{label}</span>
+      <span className="font-semibold">{value}</span>
+    </div>
+  );
+}
+
+function Empty() {
+  return (
+    <div className="text-sm text-gray-500">
+      No data yet.
     </div>
   );
 }
