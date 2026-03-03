@@ -60,7 +60,7 @@ export default async function handler(req: any, res: any) {
       : defaultTo;
 
     // -------------------------------
-    // Base KPI Params
+    // KPI Params
     // -------------------------------
 
     const kpiParams = {
@@ -101,7 +101,7 @@ export default async function handler(req: any, res: any) {
     }
 
     // -------------------------------
-    // 3️⃣ Detailed Location + Scope Breakdown
+    // 3️⃣ Detailed Location Breakdown
     // -------------------------------
 
     const { data: detailedLocation, error: locationError } =
@@ -116,6 +116,21 @@ export default async function handler(req: any, res: any) {
     }
 
     // -------------------------------
+    // 4️⃣ Activity / Sector Breakdown
+    // -------------------------------
+
+    const { data: activityBreakdown, error: activityError } =
+      await supabase.rpc("analytics_activity_breakdown", {
+        p_from: dateFrom,
+        p_to: dateTo,
+      });
+
+    if (activityError) {
+      console.error("Activity breakdown RPC error:", activityError);
+      return res.status(500).json({ error: "Failed to load activity breakdown" });
+    }
+
+    // -------------------------------
     // Final Structured Response
     // -------------------------------
 
@@ -123,6 +138,7 @@ export default async function handler(req: any, res: any) {
       kpis: kpis ?? {},
       top_services: topServices ?? [],
       detailed_location: detailedLocation ?? [],
+      activity_breakdown: activityBreakdown ?? [],
     });
 
   } catch (error) {

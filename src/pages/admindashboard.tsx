@@ -14,6 +14,13 @@ type DetailedLocation = {
   count: number;
 };
 
+type ActivityBreakdown = {
+  activity_id: string;
+  sector: string;
+  subsector: string;
+  count: number;
+};
+
 type Kpis = {
   results_viewed: number;
   email_submitted: number;
@@ -27,6 +34,7 @@ type AnalyticsResponse = {
   kpis: Kpis;
   top_services: TopService[];
   detailed_location: DetailedLocation[];
+  activity_breakdown: ActivityBreakdown[];
 };
 
 function formatInt(value: number) {
@@ -79,17 +87,11 @@ export default function AdminDashboard() {
     };
   }, []);
 
-  if (loading) {
-    return <div className="p-8">Loading analytics…</div>;
-  }
-
-  if (error) {
-    return <div className="p-8 text-red-600">{error}</div>;
-  }
-
+  if (loading) return <div className="p-8">Loading analytics…</div>;
+  if (error) return <div className="p-8 text-red-600">{error}</div>;
   if (!data) return null;
 
-  const { kpis, top_services, detailed_location } = data;
+  const { kpis, top_services, detailed_location, activity_breakdown } = data;
 
   return (
     <div className="p-8 space-y-10">
@@ -105,8 +107,8 @@ export default function AdminDashboard() {
         <KpiCard label="Click Rate from Viewed" value={formatPct(kpis.email_click_rate_from_viewed)} />
       </div>
 
-      {/* TWO COLUMN GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* THREE COLUMN GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
         {/* Top Clicked Services */}
         <div className="rounded-2xl border bg-white p-6 shadow-sm">
@@ -133,7 +135,7 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* Detailed Location + Scope Breakdown */}
+        {/* Location & Scope Breakdown */}
         <div className="rounded-2xl border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold mb-4">
             Location & Scope Breakdown
@@ -166,6 +168,33 @@ export default function AdminDashboard() {
               </div>
             );
           })}
+        </div>
+
+        {/* Activity & Sector Breakdown */}
+        <div className="rounded-2xl border bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold mb-4">
+            Top Activities & Sectors
+          </h2>
+
+          {activity_breakdown.length === 0 && (
+            <div className="text-sm text-gray-500">
+              No activity data yet.
+            </div>
+          )}
+
+          {activity_breakdown.slice(0, 10).map((row, i) => (
+            <div
+              key={i}
+              className="flex justify-between py-2 border-b text-sm"
+            >
+              <span>
+                {row.sector} → {row.subsector}
+              </span>
+              <span className="font-semibold">
+                {formatInt(row.count)}
+              </span>
+            </div>
+          ))}
         </div>
 
       </div>
