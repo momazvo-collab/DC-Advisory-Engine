@@ -1,12 +1,24 @@
 import React from "react";
 
-type AnalyticsKpisResponse = {
+type TopService = {
+  service_id: string;
+  click_count: number;
+};
+
+type DetailedLocation = {
+  location_label: string;
+  count: number;
+};
+
+type AnalyticsResponse = {
   results_viewed: number;
   email_submitted: number;
   email_link_clicked: number;
   email_submit_rate: number;
   email_click_rate_from_submitted: number;
   email_click_rate_from_viewed: number;
+  top_services: TopService[];
+  detailed_location: DetailedLocation[];
 };
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -29,7 +41,7 @@ function formatPct(value: number) {
 }
 
 export default function AdminDashboard() {
-  const [data, setData] = React.useState<AnalyticsKpisResponse | null>(null);
+  const [data, setData] = React.useState<AnalyticsResponse | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -67,25 +79,8 @@ export default function AdminDashboard() {
           throw new Error("Invalid analytics response");
         }
 
-        const typed = raw as Partial<AnalyticsKpisResponse>;
-
-        const requiredKeys: (keyof AnalyticsKpisResponse)[] = [
-          "results_viewed",
-          "email_submitted",
-          "email_link_clicked",
-          "email_submit_rate",
-          "email_click_rate_from_submitted",
-          "email_click_rate_from_viewed",
-        ];
-
-        for (const k of requiredKeys) {
-          if (typeof typed[k] !== "number") {
-            throw new Error("Invalid analytics response");
-          }
-        }
-
         if (!cancelled) {
-          setData(typed as AnalyticsKpisResponse);
+          setData(raw as AnalyticsResponse);
         }
       } catch (e) {
         if (!cancelled) {
@@ -144,11 +139,12 @@ export default function AdminDashboard() {
 
   return (
     <div className="p-6 sm:p-10">
-      <h1 className="text-2xl font-semibold mb-6 text-[#003B5C]">
+      <h1 className="text-2xl font-semibold mb-8 text-[#003B5C]">
         Advisory Engine Analytics
       </h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         <KpiCard
           label="Results Viewed"
           value={formatInt(data.results_viewed)}
@@ -165,6 +161,63 @@ export default function AdminDashboard() {
           label="Click Rate from Viewed"
           value={formatPct(data.email_click_rate_from_viewed)}
         />
+      </div>
+
+      {/* ANALYTICS GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        {/* Top Clicked Services */}
+        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-[#003B5C] mb-4">
+            Top Clicked Email Services
+          </h2>
+
+          {data.top_services?.length === 0 && (
+            <div className="text-sm text-gray-500">
+              No email click data yet.
+            </div>
+          )}
+
+          {data.top_services?.map((service, index) => (
+            <div
+              key={service.service_id}
+              className="flex justify-between py-2 border-b text-sm"
+            >
+              <span>
+                {index + 1}. {service.service_id}
+              </span>
+              <span className="font-semibold">
+                {formatInt(service.click_count)}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Detailed Location Breakdown */}
+        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-[#003B5C] mb-4">
+            Detailed Location Breakdown
+          </h2>
+
+          {data.detailed_location?.length === 0 && (
+            <div className="text-sm text-gray-500">
+              No location data yet.
+            </div>
+          )}
+
+          {data.detailed_location?.map((loc) => (
+            <div
+              key={loc.location_label}
+              className="flex justify-between py-2 border-b text-sm"
+            >
+              <span>{loc.location_label}</span>
+              <span className="font-semibold">
+                {formatInt(loc.count)}
+              </span>
+            </div>
+          ))}
+        </div>
+
       </div>
     </div>
   );

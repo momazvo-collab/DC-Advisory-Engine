@@ -54,7 +54,9 @@ export default async function handler(req: any, res: any) {
       p_service_id: q.service_id ?? null,
     };
 
-    // Existing KPIs
+    // -------------------------------
+    // 1️⃣ KPI Metrics
+    // -------------------------------
     const { data: kpis, error: kpisError } =
       await supabase.rpc("analytics_kpis", params);
 
@@ -63,7 +65,9 @@ export default async function handler(req: any, res: any) {
       return res.status(500).json({ error: "Failed to load analytics" });
     }
 
-    // 🔥 NEW: Top clicked services
+    // -------------------------------
+    // 2️⃣ Top Clicked Email Services
+    // -------------------------------
     const { data: topServices, error: topError } =
       await supabase.rpc("analytics_top_clicked_services", {
         p_from: dateFrom,
@@ -75,9 +79,27 @@ export default async function handler(req: any, res: any) {
       return res.status(500).json({ error: "Failed to load top services" });
     }
 
+    // -------------------------------
+    // 3️⃣ Detailed Location Breakdown
+    // -------------------------------
+    const { data: detailedLocation, error: locationError } =
+      await supabase.rpc("analytics_detailed_location_breakdown", {
+        p_from: dateFrom,
+        p_to: dateTo,
+      });
+
+    if (locationError) {
+      console.error("Detailed location RPC error:", locationError);
+      return res.status(500).json({ error: "Failed to load location breakdown" });
+    }
+
+    // -------------------------------
+    // FINAL RESPONSE
+    // -------------------------------
     return res.status(200).json({
       ...kpis,
       top_services: topServices ?? [],
+      detailed_location: detailedLocation ?? [],
     });
 
   } catch (error) {
