@@ -1,5 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 
+/**
+ * Temporary admin guard.
+ * Can later be replaced with Supabase Auth.
+ */
 function validateAdmin(req: any): boolean {
   const adminSecret = process.env.ADMIN_SECRET;
 
@@ -26,25 +30,40 @@ export default async function handler(req: any, res: any) {
     const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseServiceRoleKey) {
-      console.error("Analytics API error: Missing Supabase environment variables");
-      return res.status(500).json({ error: "Failed to load analytics" });
+      console.error("Missing Supabase environment variables");
+      return res.status(500).json({ error: "Analytics not configured" });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+    const supabase = createClient(
+      supabaseUrl,
+      supabaseServiceRoleKey
+    );
 
     const q = (req.query || {}) as any;
 
-    // Default date range = last 30 days
+    // -------------------------------
+    // Date Range Handling
+    // -------------------------------
+
     const now = new Date();
     const defaultTo = now.toISOString();
     const defaultFrom = new Date(
       now.getTime() - 30 * 24 * 60 * 60 * 1000
     ).toISOString();
 
-    const dateFrom = q.from ? new Date(q.from).toISOString() : defaultFrom;
-    const dateTo = q.to ? new Date(q.to).toISOString() : defaultTo;
+    const dateFrom = q.from
+      ? new Date(q.from).toISOString()
+      : defaultFrom;
 
-    const params = {
+    const dateTo = q.to
+      ? new Date(q.to).toISOString()
+      : defaultTo;
+
+    // -------------------------------
+    // Base KPI Params
+    // -------------------------------
+
+    const kpiParams = {
       p_from: dateFrom,
       p_to: dateTo,
       p_scope: q.scope ?? null,
@@ -57,17 +76,19 @@ export default async function handler(req: any, res: any) {
     // -------------------------------
     // 1️⃣ KPI Metrics
     // -------------------------------
+
     const { data: kpis, error: kpisError } =
-      await supabase.rpc("analytics_kpis", params);
+      await supabase.rpc("analytics_kpis", kpiParams);
 
     if (kpisError) {
-      console.error("Analytics KPI RPC error:", kpisError);
-      return res.status(500).json({ error: "Failed to load analytics" });
+      console.error("KPI RPC error:", kpisError);
+      return res.status(500).json({ error: "Failed to load KPIs" });
     }
 
     // -------------------------------
     // 2️⃣ Top Clicked Email Services
     // -------------------------------
+
     const { data: topServices, error: topError } =
       await supabase.rpc("analytics_top_clicked_services", {
         p_from: dateFrom,
@@ -80,8 +101,9 @@ export default async function handler(req: any, res: any) {
     }
 
     // -------------------------------
-    // 3️⃣ Detailed Location Breakdown
+    // 3️⃣ Detailed Location + Scope Breakdown
     // -------------------------------
+
     const { data: detailedLocation, error: locationError } =
       await supabase.rpc("analytics_detailed_location_breakdown", {
         p_from: dateFrom,
@@ -89,21 +111,22 @@ export default async function handler(req: any, res: any) {
       });
 
     if (locationError) {
-      console.error("Detailed location RPC error:", locationError);
+      console.error("Location breakdown RPC error:", locationError);
       return res.status(500).json({ error: "Failed to load location breakdown" });
     }
 
     // -------------------------------
-    // FINAL RESPONSE
+    // Final Structured Response
     // -------------------------------
+
     return res.status(200).json({
-      ...kpis,
+      kpis: kpis ?? {},
       top_services: topServices ?? [],
       detailed_location: detailedLocation ?? [],
     });
 
   } catch (error) {
-    console.error("Analytics API error:", error);
+    console.error("Analytics API fatal error:", error);
     return res.status(500).json({ error: "Failed to load analytics" });
   }
 }
