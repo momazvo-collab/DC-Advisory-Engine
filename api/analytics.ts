@@ -1,10 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
 
-/**
- * Temporary admin guard.
- * Later you can replace this with Supabase Auth validation
- * without touching the rest of the analytics logic.
- */
 function validateAdmin(req: any): boolean {
   const adminSecret = process.env.ADMIN_SECRET;
 
@@ -18,12 +13,10 @@ function validateAdmin(req: any): boolean {
 }
 
 export default async function handler(req: any, res: any) {
-  // Only allow GET
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  // Admin protection
   if (!validateAdmin(req)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
@@ -48,7 +41,6 @@ export default async function handler(req: any, res: any) {
       now.getTime() - 30 * 24 * 60 * 60 * 1000
     ).toISOString();
 
-    // Safe date normalization
     const dateFrom = q.from ? new Date(q.from).toISOString() : defaultFrom;
     const dateTo = q.to ? new Date(q.to).toISOString() : defaultTo;
 
@@ -62,14 +54,31 @@ export default async function handler(req: any, res: any) {
       p_service_id: q.service_id ?? null,
     };
 
-    const { data, error } = await supabase.rpc("analytics_kpis", params);
+    // Existing KPIs
+    const { data: kpis, error: kpisError } =
+      await supabase.rpc("analytics_kpis", params);
 
-    if (error) {
-      console.error("Analytics API Supabase RPC error:", error);
+    if (kpisError) {
+      console.error("Analytics KPI RPC error:", kpisError);
       return res.status(500).json({ error: "Failed to load analytics" });
     }
 
-    return res.status(200).json(data);
+    // 🔥 NEW: Top clicked services
+    const { data: topServices, error: topError } =
+      await supabase.rpc("analytics_top_clicked_services", {
+        p_from: dateFrom,
+        p_to: dateTo,
+      });
+
+    if (topError) {
+      console.error("Top services RPC error:", topError);
+      return res.status(500).json({ error: "Failed to load top services" });
+    }
+
+    return res.status(200).json({
+      ...kpis,
+      top_services: topServices ?? [],
+    });
 
   } catch (error) {
     console.error("Analytics API error:", error);
