@@ -86,7 +86,7 @@ export function StepServices({
             )}
           </div>
 
-          <div className="text-lg font-semibold text-[#003B5C] mt-1">
+          <div className="text-lg font-semibold text-[#003B5C] mt-2">
             {activity.activity_name}
           </div>
           <div className="text-sm text-gray-600 mt-1">
@@ -160,15 +160,43 @@ export function StepServices({
         </div>
       )}
 
+      {/* Corporate Service Providers */}
       <div className="rounded-2xl border border-gray-300 bg-gray-50 p-6 mt-8">
         <h3 className="text-xl font-semibold text-[#003B5C] mb-2">
           Corporate Service Providers
         </h3>
 
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-gray-600 mb-5">
           Access a curated network of trusted partners supporting operational,
           financial, and advisory services across Dubai and international markets.
         </p>
+
+        <div className="flex flex-wrap gap-3 mb-5">
+          {[
+            "Banking",
+            "Cloud Services",
+            "HR & Payroll",
+            "Legal Advisory",
+            "Telecommunications",
+            "+ Verified Partners",
+          ].map((item) => (
+            <div
+              key={item}
+              className="px-4 py-2 rounded-full bg-white text-sm font-medium text-[#003B5C] border border-gray-300"
+            >
+              {item}
+            </div>
+          ))}
+        </div>
+
+        <a
+          href="https://www.dubaichambers.com/en/corporate-service-providers"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm font-medium text-[#003B5C] hover:underline"
+        >
+          Explore Corporate Service Providers →
+        </a>
       </div>
 
       <div className="space-y-4">
