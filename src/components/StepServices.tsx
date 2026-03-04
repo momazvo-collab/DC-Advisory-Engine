@@ -171,7 +171,7 @@ export function StepServices({
           financial, and advisory services across Dubai and international markets.
         </p>
 
-        <div className="flex flex-wrap gap-3 mb-5">
+        <div className="flex flex-wrap gap-3 mb-0">
           {[
             "Banking",
             "Cloud Services",
@@ -189,14 +189,7 @@ export function StepServices({
           ))}
         </div>
 
-        <a
-          href="https://www.dubaichambers.com/en/corporate-service-providers"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm font-medium text-[#003B5C] hover:underline"
-        >
-          Explore Corporate Service Providers →
-        </a>
+       
       </div>
 
       <div className="space-y-4">
