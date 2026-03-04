@@ -34,35 +34,25 @@ export default async function handler(req: any, res: any) {
       return res.status(500).json({ error: "Analytics not configured" });
     }
 
-    const supabase = createClient(
-      supabaseUrl,
-      supabaseServiceRoleKey
-    );
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     const q = (req.query || {}) as any;
 
     // -------------------------------
     // Date Range Handling
     // -------------------------------
-
     const now = new Date();
     const defaultTo = now.toISOString();
     const defaultFrom = new Date(
       now.getTime() - 30 * 24 * 60 * 60 * 1000
     ).toISOString();
 
-    const dateFrom = q.from
-      ? new Date(q.from).toISOString()
-      : defaultFrom;
-
-    const dateTo = q.to
-      ? new Date(q.to).toISOString()
-      : defaultTo;
+    const dateFrom = q.from ? new Date(q.from).toISOString() : defaultFrom;
+    const dateTo = q.to ? new Date(q.to).toISOString() : defaultTo;
 
     // -------------------------------
     // KPI Params
     // -------------------------------
-
     const kpiParams = {
       p_from: dateFrom,
       p_to: dateTo,
@@ -76,9 +66,10 @@ export default async function handler(req: any, res: any) {
     // -------------------------------
     // 1️⃣ KPI Metrics
     // -------------------------------
-
-    const { data: kpis, error: kpisError } =
-      await supabase.rpc("analytics_kpis", kpiParams);
+    const { data: kpis, error: kpisError } = await supabase.rpc(
+      "analytics_kpis",
+      kpiParams
+    );
 
     if (kpisError) {
       console.error("KPI RPC error:", kpisError);
@@ -88,12 +79,10 @@ export default async function handler(req: any, res: any) {
     // -------------------------------
     // 2️⃣ Top Clicked Email Services
     // -------------------------------
-
-    const { data: topServices, error: topError } =
-      await supabase.rpc("analytics_top_clicked_services", {
-        p_from: dateFrom,
-        p_to: dateTo,
-      });
+    const { data: topServices, error: topError } = await supabase.rpc(
+      "analytics_top_clicked_services",
+      { p_from: dateFrom, p_to: dateTo }
+    );
 
     if (topError) {
       console.error("Top services RPC error:", topError);
@@ -103,12 +92,10 @@ export default async function handler(req: any, res: any) {
     // -------------------------------
     // 3️⃣ Detailed Location Breakdown
     // -------------------------------
-
-    const { data: detailedLocation, error: locationError } =
-      await supabase.rpc("analytics_detailed_location_breakdown", {
-        p_from: dateFrom,
-        p_to: dateTo,
-      });
+    const { data: detailedLocation, error: locationError } = await supabase.rpc(
+      "analytics_detailed_location_breakdown",
+      { p_from: dateFrom, p_to: dateTo }
+    );
 
     if (locationError) {
       console.error("Location breakdown RPC error:", locationError);
@@ -118,12 +105,10 @@ export default async function handler(req: any, res: any) {
     // -------------------------------
     // 4️⃣ Activity / Sector Breakdown
     // -------------------------------
-
-    const { data: activityBreakdown, error: activityError } =
-      await supabase.rpc("analytics_activity_breakdown", {
-        p_from: dateFrom,
-        p_to: dateTo,
-      });
+    const { data: activityBreakdown, error: activityError } = await supabase.rpc(
+      "analytics_activity_breakdown",
+      { p_from: dateFrom, p_to: dateTo }
+    );
 
     if (activityError) {
       console.error("Activity breakdown RPC error:", activityError);
@@ -133,12 +118,10 @@ export default async function handler(req: any, res: any) {
     // -------------------------------
     // 5️⃣ Region Demand
     // -------------------------------
-
-    const { data: regionDemand, error: regionError } =
-      await supabase.rpc("analytics_region_demand", {
-        p_from: dateFrom,
-        p_to: dateTo,
-      });
+    const { data: regionDemand, error: regionError } = await supabase.rpc(
+      "analytics_region_demand",
+      { p_from: dateFrom, p_to: dateTo }
+    );
 
     if (regionError) {
       console.error("Region demand RPC error:", regionError);
@@ -148,12 +131,10 @@ export default async function handler(req: any, res: any) {
     // -------------------------------
     // 6️⃣ Sector Demand
     // -------------------------------
-
-    const { data: sectorDemand, error: sectorError } =
-      await supabase.rpc("analytics_sector_demand", {
-        p_from: dateFrom,
-        p_to: dateTo,
-      });
+    const { data: sectorDemand, error: sectorError } = await supabase.rpc(
+      "analytics_sector_demand",
+      { p_from: dateFrom, p_to: dateTo }
+    );
 
     if (sectorError) {
       console.error("Sector demand RPC error:", sectorError);
@@ -161,8 +142,32 @@ export default async function handler(req: any, res: any) {
     }
 
     // -------------------------------
-    // Final Structured Response
+    // 7️⃣ Sector Demand by Scope (NEW)
     // -------------------------------
+    const { data: sectorScopeDemand, error: sectorScopeError } =
+      await supabase.rpc("analytics_sector_scope_demand", {
+        p_from: dateFrom,
+        p_to: dateTo,
+      });
+
+    if (sectorScopeError) {
+      console.error("Sector-scope demand RPC error:", sectorScopeError);
+      return res.status(500).json({ error: "Failed to load sector-scope demand" });
+    }
+
+    // -------------------------------
+    // 8️⃣ International Region + Sector Demand (NEW)
+    // -------------------------------
+    const { data: regionSectorDemand, error: regionSectorError } =
+      await supabase.rpc("analytics_region_sector_demand", {
+        p_from: dateFrom,
+        p_to: dateTo,
+      });
+
+    if (regionSectorError) {
+      console.error("Region-sector demand RPC error:", regionSectorError);
+      return res.status(500).json({ error: "Failed to load region-sector demand" });
+    }
 
     return res.status(200).json({
       kpis: kpis ?? {},
@@ -171,8 +176,9 @@ export default async function handler(req: any, res: any) {
       activity_breakdown: activityBreakdown ?? [],
       region_demand: regionDemand ?? [],
       sector_demand: sectorDemand ?? [],
+      sector_scope_demand: sectorScopeDemand ?? [],
+      region_sector_demand: regionSectorDemand ?? [],
     });
-
   } catch (error) {
     console.error("Analytics API fatal error:", error);
     return res.status(500).json({ error: "Failed to load analytics" });
