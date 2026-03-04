@@ -1,18 +1,16 @@
 import React from "react";
 
-/* -------------------- Types -------------------- */
-
 type TopService = {
   service_id: string;
   click_count: number;
 };
 
 type DetailedLocation = {
-  location_base: string | null; // "Dubai" | "UAE" | "International"
-  emirate: string | null;       // For UAE Local mostly (Sharjah, Abu Dhabi...)
-  country: string | null;       // For International base mostly (Argentina, Taiwan...)
-  scope: string | null;         // "Local" | "International"
-  region: string | null;        // Expansion region (Africa, Europe...) when scope=International
+  location_base: string | null;
+  emirate: string | null;
+  country: string | null;
+  scope: string | null;
+  region: string | null;
   count: number;
 };
 
@@ -33,12 +31,14 @@ type SectorDemand = {
   count: number;
 };
 
+// ✅ NEW
 type SectorScopeDemand = {
   scope: string;
   sector: string;
   count: number;
 };
 
+// ✅ NEW
 type RegionSectorDemand = {
   region: string;
   sector: string;
@@ -61,14 +61,14 @@ type AnalyticsResponse = {
   activity_breakdown: ActivityBreakdown[];
   region_demand: RegionDemand[];
   sector_demand: SectorDemand[];
+
+  // ✅ NEW (must match API response keys)
   sector_scope_demand: SectorScopeDemand[];
   region_sector_demand: RegionSectorDemand[];
 };
 
-/* -------------------- Formatters -------------------- */
-
 function formatInt(value: number) {
-  return new Intl.NumberFormat().format(value || 0);
+  return new Intl.NumberFormat().format(value);
 }
 
 function formatPct(value: number) {
@@ -76,45 +76,173 @@ function formatPct(value: number) {
   return `${(n * 100).toFixed(1)}%`;
 }
 
-function safeKey(x: any) {
-  return String(x ?? "").trim() || "Unknown";
+function safeNum(n: any) {
+  return Number.isFinite(Number(n)) ? Number(n) : 0;
 }
 
-/* -------------------- Grouping Helpers -------------------- */
-
-function sumWhere(rows: DetailedLocation[], pred: (r: DetailedLocation) => boolean) {
-  return rows.reduce((acc, r) => acc + (pred(r) ? (r.count || 0) : 0), 0);
+function pctOf(part: number, total: number) {
+  if (!total) return "0%";
+  return `${((part / total) * 100).toFixed(1)}%`;
 }
 
-function groupSum<T extends Record<string, any>>(
-  rows: T[],
-  keyFn: (r: T) => string,
-  valueFn: (r: T) => number
-) {
-  const m = new Map<string, number>();
-  for (const r of rows) {
-    const k = keyFn(r);
-    m.set(k, (m.get(k) || 0) + (valueFn(r) || 0));
+function top1<T>(rows: T[], getCount: (r: T) => number) {
+  if (!rows || rows.length === 0) return null;
+  return rows.reduce((best, r) => (getCount(r) > getCount(best) ? r : best), rows[0]);
+}
+
+function normalizeKey(s: any) {
+  const v = String(s ?? "").trim();
+  return v.length ? v : "Unknown";
+}
+
+/**
+ * Build 3–6 management-ready insights from existing arrays.
+ * ✅ No DB/API change required. Pure UI-side aggregation.
+ */
+function buildInsights(input: {
+  kpis: Kpis;
+  detailed_location: DetailedLocation[];
+  sector_demand: SectorDemand[];
+  region_demand: RegionDemand[];
+  sector_scope_demand: SectorScopeDemand[];
+  region_sector_demand: RegionSectorDemand[];
+}) {
+  const { kpis, detailed_location, sector_demand, region_demand, sector_scope_demand, region_sector_demand } =
+    input;
+
+  const totalViewed = safeNum(kpis.results_viewed);
+
+  // ---- Location totals (Dubai / UAE / International) ----
+  const baseTotals = new Map<string, number>();
+  for (const row of detailed_location || []) {
+    const base = normalizeKey(row.location_base);
+    baseTotals.set(base, (baseTotals.get(base) || 0) + safeNum(row.count));
   }
-  return Array.from(m.entries())
-    .map(([key, value]) => ({ key, value }))
-    .sort((a, b) => b.value - a.value);
-}
 
-/* -------------------- Component -------------------- */
+  const dubaiTotal = baseTotals.get("Dubai") || 0;
+  const uaeTotal = baseTotals.get("UAE") || 0;
+  const intlBaseTotal = baseTotals.get("International") || 0;
+
+  // ---- UAE top emirate (exclude Dubai) ----
+  const uaeEmirateTotals = new Map<string, number>();
+  for (const row of detailed_location || []) {
+    if (String(row.location_base) !== "UAE") continue;
+    const em = normalizeKey(row.emirate);
+    // your schema sometimes stores AE in country and emirate as "Sharjah"; keep emirate focus
+    uaeEmirateTotals.set(em, (uaeEmirateTotals.get(em) || 0) + safeNum(row.count));
+  }
+  // avoid counting Unknown if other emirates exist
+  const uaeEmirateList = Array.from(uaeEmirateTotals.entries())
+    .map(([emirate, count]) => ({ emirate, count }))
+    .sort((a, b) => b.count - a.count);
+  const topUaeEmirate = uaeEmirateList.find((x) => x.emirate !== "Unknown") || uaeEmirateList[0] || null;
+
+  // ---- International inbound top country (location_base = International) ----
+  const intlCountryTotals = new Map<string, number>();
+  for (const row of detailed_location || []) {
+    if (String(row.location_base) !== "International") continue;
+    const c = normalizeKey(row.country);
+    intlCountryTotals.set(c, (intlCountryTotals.get(c) || 0) + safeNum(row.count));
+  }
+  const intlCountryList = Array.from(intlCountryTotals.entries())
+    .map(([country, count]) => ({ country, count }))
+    .sort((a, b) => b.count - a.count);
+  const topIntlCountry = intlCountryList.find((x) => x.country !== "Unknown") || intlCountryList[0] || null;
+
+  // ---- Outbound expansion top region (region_demand) ----
+  const topRegion = top1(region_demand || [], (r) => safeNum((r as any).count));
+
+  // ---- Top sector overall ----
+  const topSector = top1(sector_demand || [], (r) => safeNum((r as any).count));
+
+  // ---- Top sector by scope (local / international) ----
+  const localSectorRows = (sector_scope_demand || []).filter((r) => String(r.scope) === "Local");
+  const intlSectorRows = (sector_scope_demand || []).filter((r) => String(r.scope) === "International");
+  const topLocalSector = top1(localSectorRows, (r) => safeNum((r as any).count));
+  const topIntlSector = top1(intlSectorRows, (r) => safeNum((r as any).count));
+
+  // ---- International hottest Region+Sector combo ----
+  const topRegionSector = top1(region_sector_demand || [], (r) => safeNum((r as any).count));
+
+  const bullets: { label: string; value: string }[] = [];
+
+  // 1) Dubai share
+  if (dubaiTotal > 0) {
+    bullets.push({
+      label: "Dubai demand share",
+      value: `${formatInt(dubaiTotal)} (${pctOf(dubaiTotal, totalViewed)})`,
+    });
+  }
+
+  // 2) UAE top emirate
+  if (uaeTotal > 0 && topUaeEmirate) {
+    bullets.push({
+      label: "Top UAE emirate (outside Dubai)",
+      value: `${topUaeEmirate.emirate} (${formatInt(topUaeEmirate.count)})`,
+    });
+  }
+
+  // 3) Top inbound country
+  if (intlBaseTotal > 0 && topIntlCountry) {
+    bullets.push({
+      label: "Top inbound country",
+      value: `${topIntlCountry.country} (${formatInt(topIntlCountry.count)})`,
+    });
+  }
+
+  // 4) Top expansion region
+  if (topRegion && (topRegion as any).region) {
+    bullets.push({
+      label: "Top expansion region",
+      value: `${(topRegion as any).region} (${formatInt(safeNum((topRegion as any).count))})`,
+    });
+  }
+
+  // 5) Top sector overall
+  if (topSector && (topSector as any).sector) {
+    bullets.push({
+      label: "Top sector overall",
+      value: `${(topSector as any).sector} (${formatInt(safeNum((topSector as any).count))})`,
+    });
+  }
+
+  // 6) Best local vs international sector (optional)
+  if (topLocalSector && (topLocalSector as any).sector) {
+    bullets.push({
+      label: "Top Local sector",
+      value: `${(topLocalSector as any).sector} (${formatInt(safeNum((topLocalSector as any).count))})`,
+    });
+  }
+  if (topIntlSector && (topIntlSector as any).sector) {
+    bullets.push({
+      label: "Top International sector",
+      value: `${(topIntlSector as any).sector} (${formatInt(safeNum((topIntlSector as any).count))})`,
+    });
+  }
+
+  // 7) Hottest international combo
+  if (topRegionSector && (topRegionSector as any).region && (topRegionSector as any).sector) {
+    bullets.push({
+      label: "Hottest Int’l combo",
+      value: `${(topRegionSector as any).region} → ${(topRegionSector as any).sector} (${formatInt(
+        safeNum((topRegionSector as any).count)
+      )})`,
+    });
+  }
+
+  // keep it short for management
+  return bullets.slice(0, 6);
+}
 
 export default function AdminDashboard() {
   const [data, setData] = React.useState<AnalyticsResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
-  // "Show more" toggles
-  const [showAllServices, setShowAllServices] = React.useState(false);
-  const [showAllActivities, setShowAllActivities] = React.useState(false);
+  // "show more" toggles (avoid infinite scroll panels)
+  const [showAllLocation, setShowAllLocation] = React.useState(false);
   const [showAllSectorScope, setShowAllSectorScope] = React.useState(false);
   const [showAllRegionSector, setShowAllRegionSector] = React.useState(false);
-  const [showAllIntlCountries, setShowAllIntlCountries] = React.useState(false);
-  const [showAllUaeEmirates, setShowAllUaeEmirates] = React.useState(false);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -129,13 +257,21 @@ export default function AdminDashboard() {
 
         const json = await resp.json();
 
-        if (!resp.ok) throw new Error(json?.error || "Failed to load analytics");
+        if (!resp.ok) {
+          throw new Error(json?.error || "Failed to load analytics");
+        }
 
-        if (!cancelled) setData(json);
+        if (!cancelled) {
+          setData(json);
+        }
       } catch (e: any) {
-        if (!cancelled) setError(e.message);
+        if (!cancelled) {
+          setError(e.message);
+        }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     })();
 
@@ -159,77 +295,28 @@ export default function AdminDashboard() {
     region_sector_demand,
   } = data;
 
-  const totalViewed = kpis.results_viewed || 0;
-
-  /* -------------------- Jurisdiction Totals -------------------- */
-
-  const dubaiLocal = sumWhere(
+  const insights = buildInsights({
+    kpis,
     detailed_location,
-    (r) => r.location_base === "Dubai" && r.scope === "Local"
-  );
-  const dubaiIntl = sumWhere(
-    detailed_location,
-    (r) => r.location_base === "Dubai" && r.scope === "International"
-  );
+    sector_demand,
+    region_demand,
+    sector_scope_demand,
+    region_sector_demand,
+  });
 
-  const uaeLocal = sumWhere(
-    detailed_location,
-    (r) => r.location_base === "UAE" && r.scope === "Local"
-  );
-  const uaeIntl = sumWhere(
-    detailed_location,
-    (r) => r.location_base === "UAE" && r.scope === "International"
-  );
+  const LOCATION_LIMIT = 10;
+  const SECTOR_SCOPE_LIMIT = 10;
+  const REGION_SECTOR_LIMIT = 10;
 
-  const intlLocal = sumWhere(
-    detailed_location,
-    (r) => r.location_base === "International" && r.scope === "Local"
-  );
-  const intlIntl = sumWhere(
-    detailed_location,
-    (r) => r.location_base === "International" && r.scope === "International"
-  );
+  const locationRows = showAllLocation ? detailed_location : detailed_location.slice(0, LOCATION_LIMIT);
 
-  /* -------------------- UAE Top Emirates -------------------- */
-  const uaeEmirateRowsRaw = detailed_location.filter(
-    (r) => r.location_base === "UAE" && r.scope === "Local"
-  );
-  const uaeEmirates = groupSum(
-    uaeEmirateRowsRaw,
-    (r) => safeKey(r.emirate),
-    (r) => r.count || 0
-  );
+  const sectorScopeRows = showAllSectorScope
+    ? sector_scope_demand
+    : sector_scope_demand.slice(0, SECTOR_SCOPE_LIMIT);
 
-  /* -------------------- International Top Countries -------------------- */
-  const intlCountryRowsRaw = detailed_location.filter(
-    (r) => r.location_base === "International" && r.scope === "Local"
-  );
-  const intlCountries = groupSum(
-    intlCountryRowsRaw,
-    (r) => safeKey(r.country),
-    (r) => r.count || 0
-  );
-
-  /* -------------------- Top Insights -------------------- */
-
-  const topRegion = region_demand?.[0];
-  const topSector = sector_demand?.[0];
-  const topUaeEmirate = uaeEmirates?.[0];
-  const topIntlCountry = intlCountries?.[0];
-
-  const dubaiLocalPct = totalViewed > 0 ? dubaiLocal / totalViewed : 0;
-
-  /* -------------------- Limits -------------------- */
-
-  const LIMIT = 8;
-
-  const servicesRows = showAllServices ? top_services : top_services.slice(0, LIMIT);
-  const activityRows = showAllActivities ? activity_breakdown : activity_breakdown.slice(0, 10);
-  const sectorScopeRows = showAllSectorScope ? sector_scope_demand : sector_scope_demand.slice(0, 10);
-  const regionSectorRows = showAllRegionSector ? region_sector_demand : region_sector_demand.slice(0, 10);
-
-  const uaeEmirateRows = showAllUaeEmirates ? uaeEmirates : uaeEmirates.slice(0, LIMIT);
-  const intlCountryRows = showAllIntlCountries ? intlCountries : intlCountries.slice(0, LIMIT);
+  const regionSectorRows = showAllRegionSector
+    ? region_sector_demand
+    : region_sector_demand.slice(0, REGION_SECTOR_LIMIT);
 
   return (
     <div className="p-8 space-y-10">
@@ -243,167 +330,112 @@ export default function AdminDashboard() {
         <KpiCard label="Click Rate from Viewed" value={formatPct(kpis.email_click_rate_from_viewed)} />
       </div>
 
-      {/* TOP INSIGHTS STRIP */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <InsightCard
-          title="Dubai Local Demand"
-          primary={`${formatInt(dubaiLocal)} (${formatPct(dubaiLocalPct)})`}
-          secondary="Share of total results viewed"
-        />
-        <InsightCard
-          title="Top UAE Emirate"
-          primary={topUaeEmirate ? `${topUaeEmirate.key} (${formatInt(topUaeEmirate.value)})` : "—"}
-          secondary="UAE local (other emirates)"
-        />
-        <InsightCard
-          title="Top Expansion Region"
-          primary={topRegion ? `${topRegion.region} (${formatInt(topRegion.count)})` : "—"}
-          secondary="International scope"
-        />
-        <InsightCard
-          title="Top Sector"
-          primary={topSector ? `${topSector.sector} (${formatInt(topSector.count)})` : "—"}
-          secondary="Across all usage"
-        />
+      {/* ✅ TOP INSIGHTS STRIP */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {insights.length === 0 ? (
+          <div className="text-sm text-gray-500">No insights yet.</div>
+        ) : (
+          insights.map((ins, i) => (
+            <InsightCard key={i} label={ins.label} value={ins.value} />
+          ))
+        )}
       </div>
 
-      {/* JURISDICTION STORY (NO LONG LIST) */}
+      {/* MAIN GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <Panel title="Dubai (Jurisdiction)">
-          <MiniKpi label="Local" value={formatInt(dubaiLocal)} />
-          <MiniKpi label="International" value={formatInt(dubaiIntl)} />
-          <div className="pt-3 text-xs text-gray-500">
-            Dubai should prioritize Dubai-only services. International reflects Dubai users seeking expansion.
-          </div>
-        </Panel>
-
-        <Panel
-          title="UAE (Other Emirates)"
-          footer={
-            uaeEmirates.length > LIMIT ? (
-              <Toggle expanded={showAllUaeEmirates} onClick={() => setShowAllUaeEmirates((v) => !v)} />
-            ) : null
-          }
-        >
-          <MiniKpi label="Local" value={formatInt(uaeLocal)} />
-          <MiniKpi label="International" value={formatInt(uaeIntl)} />
-          <div className="mt-4 text-sm font-semibold text-[#003B5C]">Top Emirates (Local)</div>
-          {uaeEmirateRows.length === 0 ? <Empty /> : null}
-          {uaeEmirateRows.map((r, i) => (
-            <Row key={`${r.key}-${i}`} label={r.key} value={formatInt(r.value)} />
-          ))}
-        </Panel>
-
-        <Panel
-          title="International (Inbound)"
-          footer={
-            intlCountries.length > LIMIT ? (
-              <Toggle expanded={showAllIntlCountries} onClick={() => setShowAllIntlCountries((v) => !v)} />
-            ) : null
-          }
-        >
-          <MiniKpi label="Local (Dubai membership intent)" value={formatInt(intlLocal)} />
-          <MiniKpi label="International (Expansion intent)" value={formatInt(intlIntl)} />
-
-          <div className="mt-4 text-sm font-semibold text-[#003B5C]">Top Countries (Local)</div>
-          {intlCountryRows.length === 0 ? <Empty /> : null}
-          {intlCountryRows.map((r, i) => (
-            <Row key={`${r.key}-${i}`} label={r.key} value={formatInt(r.value)} />
-          ))}
-
-          <div className="mt-6 text-sm font-semibold text-[#003B5C]">Top Regions (International)</div>
-          {region_demand.length === 0 ? <Empty /> : null}
-          {region_demand.slice(0, 5).map((r, i) => (
-            <Row key={`${r.region}-${i}`} label={r.region} value={formatInt(r.count)} />
-          ))}
-
-          <div className="pt-3 text-xs text-gray-500">
-            Use this to route to Dubai Global offices + track where inbound leads are coming from.
-          </div>
-        </Panel>
-      </div>
-
-      {/* OPERATIONS / BEHAVIOR PANELS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <Panel
-          title="Top Clicked Email Services"
-          footer={
-            top_services.length > LIMIT ? (
-              <Toggle expanded={showAllServices} onClick={() => setShowAllServices((v) => !v)} />
-            ) : null
-          }
-        >
+        {/* Top Clicked Services */}
+        <Panel title="Top Clicked Email Services">
           {top_services.length === 0 && <Empty />}
-          {servicesRows.map((service, i) => (
-            <Row
-              key={service.service_id}
-              label={`${i + 1}. ${service.service_id}`}
-              value={formatInt(service.click_count)}
-            />
+          {top_services.map((service, i) => (
+            <Row key={service.service_id} label={`${i + 1}. ${service.service_id}`} value={formatInt(service.click_count)} />
           ))}
         </Panel>
 
-        <Panel title="Top Activities & Sectors">
+        {/* Location & Scope */}
+        <Panel
+          title="Location & Scope Breakdown"
+          footer={
+            detailed_location.length > LOCATION_LIMIT ? (
+              <Toggle expanded={showAllLocation} onClick={() => setShowAllLocation((v) => !v)} />
+            ) : null
+          }
+        >
+          {detailed_location.length === 0 && <Empty />}
+
+          {locationRows.map((row, i) => {
+            const labelParts = [row.location_base, row.emirate, row.country, row.scope, row.region].filter(Boolean);
+
+            return <Row key={i} label={labelParts.join(" → ")} value={formatInt(row.count)} />;
+          })}
+        </Panel>
+
+        {/* Activity & Sector */}
+        <Panel title="Top Activities & Sectors" footer={activity_breakdown.length > 10 ? <div className="pt-3 text-xs text-gray-400">Showing top 10</div> : null}>
           {activity_breakdown.length === 0 && <Empty />}
-          {activityRows.map((row, i) => (
-            <Row
-              key={`${row.activity_id}-${i}`}
-              label={`${row.sector} → ${row.subsector}`}
-              value={formatInt(row.count)}
-            />
-          ))}
-          {activity_breakdown.length > 10 ? (
-            <div className="pt-3">
-              <Toggle expanded={showAllActivities} onClick={() => setShowAllActivities((v) => !v)} />
-            </div>
-          ) : null}
-        </Panel>
-
-        <Panel title="Sector Demand (Overall)">
-          {sector_demand.length === 0 && <Empty />}
-          {sector_demand.slice(0, 10).map((row, i) => (
-            <Row key={`${row.sector}-${i}`} label={row.sector} value={formatInt(row.count)} />
+          {activity_breakdown.slice(0, 10).map((row, i) => (
+            <Row key={i} label={`${row.sector} → ${row.subsector}`} value={formatInt(row.count)} />
           ))}
         </Panel>
       </div>
 
-      {/* STRATEGY PANELS */}
+      {/* SECOND GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Region Demand */}
+        <Panel title="Region Demand">
+          {region_demand.length === 0 && <Empty />}
+          {region_demand.map((row, i) => (
+            <Row key={i} label={row.region} value={formatInt(row.count)} />
+          ))}
+        </Panel>
+
+        {/* Sector Demand */}
+        <Panel title="Sector Demand">
+          {sector_demand.length === 0 && <Empty />}
+          {sector_demand.map((row, i) => (
+            <Row key={i} label={row.sector} value={formatInt(row.count)} />
+          ))}
+        </Panel>
+      </div>
+
+      {/* THIRD GRID (NEW) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Sector Demand by Scope (NEW) */}
         <Panel
           title="Sector Demand by Scope (Local vs International)"
           footer={
-            sector_scope_demand.length > 10 ? (
+            sector_scope_demand.length > SECTOR_SCOPE_LIMIT ? (
               <Toggle expanded={showAllSectorScope} onClick={() => setShowAllSectorScope((v) => !v)} />
             ) : null
           }
         >
           {sector_scope_demand.length === 0 && <Empty />}
+
           {sectorScopeRows.map((row, i) => (
-            <Row key={`${row.scope}-${row.sector}-${i}`} label={`${row.scope} → ${row.sector}`} value={formatInt(row.count)} />
+            <Row key={i} label={`${row.scope} → ${row.sector}`} value={formatInt(row.count)} />
           ))}
         </Panel>
 
+        {/* Region + Sector Demand (International only) (NEW) */}
         <Panel
           title="International Demand by Region + Sector"
           footer={
-            region_sector_demand.length > 10 ? (
+            region_sector_demand.length > REGION_SECTOR_LIMIT ? (
               <Toggle expanded={showAllRegionSector} onClick={() => setShowAllRegionSector((v) => !v)} />
             ) : null
           }
         >
           {region_sector_demand.length === 0 && <Empty />}
+
           {regionSectorRows.map((row, i) => (
-            <Row key={`${row.region}-${row.sector}-${i}`} label={`${row.region} → ${row.sector}`} value={formatInt(row.count)} />
+            <Row key={i} label={`${row.region} → ${row.sector}`} value={formatInt(row.count)} />
           ))}
         </Panel>
       </div>
-
-      {/* OPTIONAL: Keep raw detailed list hidden behind toggle if you want later */}
     </div>
   );
 }
 
-/* -------------------- UI Helpers -------------------- */
+/* ---------- UI Helpers ---------- */
 
 function Panel({
   title,
@@ -457,29 +489,11 @@ function KpiCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function InsightCard({
-  title,
-  primary,
-  secondary,
-}: {
-  title: string;
-  primary: string;
-  secondary: string;
-}) {
+function InsightCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border bg-white p-5 shadow-sm">
-      <div className="text-xs uppercase text-gray-500">{title}</div>
-      <div className="mt-2 text-xl font-semibold text-[#003B5C]">{primary}</div>
-      <div className="mt-1 text-xs text-gray-500">{secondary}</div>
-    </div>
-  );
-}
-
-function MiniKpi({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between py-2 border-b text-sm">
-      <span className="text-gray-700">{label}</span>
-      <span className="font-semibold text-[#003B5C]">{value}</span>
+      <div className="text-[11px] uppercase tracking-wide text-gray-500">{label}</div>
+      <div className="mt-2 text-base font-semibold text-[#003B5C]">{value}</div>
     </div>
   );
 }
