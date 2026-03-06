@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import ExecutiveSignals from "./sections/ExecutiveSignals";
 import { Panel } from "./components/Panel";
@@ -203,7 +203,27 @@ function buildExecutiveSignals(data: AnalyticsResponse) {
     { label: "Click rate from viewed", value: formatPct(kpis.email_click_rate_from_viewed) }
   ].slice(0, 6);
 }
+function computeTrendSignals(
+  current: SectorDemand[],
+  previous: SectorDemand[]
+) {
+  const prevMap = new Map(previous.map(p => [p.sector, p.count]));
 
+  return current.map(c => {
+    const prev = prevMap.get(c.sector) || 0;
+
+    const change =
+      prev === 0
+        ? 100
+        : ((c.count - prev) / prev) * 100;
+
+    return {
+      sector: c.sector,
+      count: c.count,
+      change
+    };
+  }).sort((a, b) => b.change - a.change);
+}
 /* =============================
 DASHBOARD
 ============================= */
@@ -221,7 +241,7 @@ export default function AdminDashboard() {
   const [showAllUaeEmirates, setShowAllUaeEmirates] = React.useState(false);
   const [showAllCountries, setShowAllCountries] = React.useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     let cancelled = false;
 
     (async () => {
@@ -264,6 +284,10 @@ const res = await fetch(`/api/analytics?range=${range}`, {
   } = data;
 
   const signals = buildExecutiveSignals(data);
+  const sectorTrends = computeTrendSignals(
+  sector_demand,
+  sector_demand
+).slice(0,5);
 const momentumSectors = [...sector_demand]
   .sort((a, b) => b.count - a.count)
   .slice(0, 5)
@@ -271,6 +295,7 @@ const momentumSectors = [...sector_demand]
     label: s.sector,
     value: s.count
   }));
+
 
 const momentumRegions = [...region_demand]
   .sort((a, b) => b.count - a.count)
@@ -488,6 +513,25 @@ const momentumRegions = [...region_demand]
   title="Demand momentum"
   subtitle="Signals of emerging growth across sectors and regions."
 />
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+  {sectorTrends.map((s) => (
+    <div
+      key={s.sector}
+      className="flex justify-between items-center bg-white rounded-lg p-4 border"
+    >
+      <span className="font-medium text-gray-800">{s.sector}</span>
+
+      <span
+        className={`font-semibold ${
+          s.change >= 0 ? "text-green-600" : "text-red-600"
+        }`}
+      >
+        {s.change >= 0 ? "▲" : "▼"} {Math.abs(s.change).toFixed(1)}%
+      </span>
+    </div>
+  ))}
+</div>
 
 <DemandMomentum
   sectors={momentumSectors}
