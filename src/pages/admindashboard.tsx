@@ -1,7 +1,7 @@
 import React from "react";
 
 import ExecutiveSignals from "../dashboard/sections/ExecutiveSignals";
-import Panel from "../dashboard/components/Panel";
+import { Panel } from "../dashboard/components/Panel";
 import {
   formatInt,
   formatPct,
