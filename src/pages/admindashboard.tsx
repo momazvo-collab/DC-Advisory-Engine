@@ -1,5 +1,7 @@
 import React from "react";
 
+import ExecutiveSignals from "../dashboard/sections/ExecutiveSignals";
+import Panel from "../dashboard/components/Panel";
 import {
   formatInt,
   formatPct,
@@ -424,13 +426,8 @@ export default function AdminDashboard() {
         <KpiCard label="Click Rate from Viewed" value={formatPct(kpis.email_click_rate_from_viewed)} />
       </div>
 
-      {/* Executive Signals */}
-      <SectionTitle title="Key signals" subtitle="What leadership reads first (auto-computed from current data)." />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {signals.map((s, i) => (
-          <InsightCard key={i} label={s.label} value={s.value} />
-        ))}
-      </div>
+{/* Executive Signals */}
+<ExecutiveSignals signals={signals} />
 
       {/* Jurisdiction Snapshot */}
       <SectionTitle
@@ -619,27 +616,6 @@ function SectionTitle({ title, subtitle }: { title: string; subtitle?: string })
   );
 }
 
-function Panel({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-2xl border bg-white p-6 lg:p-7 shadow-sm">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-sm font-semibold text-[#003B5C]">{title}</h2>
-          {subtitle ? <div className="text-xs text-gray-500 mt-1">{subtitle}</div> : null}
-        </div>
-      </div>
-      <div className="mt-4">{children}</div>
-    </div>
-  );
-}
 
 function KpiCard({ label, value }: { label: string; value: string }) {
   return (
@@ -650,14 +626,6 @@ function KpiCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function InsightCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border bg-white p-5 shadow-sm">
-      <div className="text-[11px] uppercase tracking-wide text-gray-500">{label}</div>
-      <div className="mt-2 text-base font-semibold text-[#003B5C]">{value}</div>
-    </div>
-  );
-}
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
