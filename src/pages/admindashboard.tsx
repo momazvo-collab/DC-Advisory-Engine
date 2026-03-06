@@ -4,6 +4,7 @@ import ExecutiveSignals from "../dashboard/sections/ExecutiveSignals";
 import { Panel } from "../dashboard/components/Panel";
 import { KpiCard } from "../dashboard/components/KpiCard";
 import { BarRow } from "../dashboard/components/BarRow";
+import { SectionTitle } from "../dashboard/components/SectionTitle";
 
 import {
   formatInt,
@@ -210,6 +211,9 @@ export default function AdminDashboard() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
+  /* time intelligence */
+const [range, setRange] = React.useState<"7d" | "30d" | "all">("30d");
+
   // Expandable activities under sectors: key = `${block}|${region}|${sector}`
   const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
 
@@ -224,9 +228,9 @@ export default function AdminDashboard() {
       try {
         const adminKey = import.meta.env.VITE_ADMIN_KEY as string;
 
-        const res = await fetch("/api/analytics", {
-          headers: { "x-admin-key": adminKey },
-        });
+const res = await fetch(`/api/analytics?range=${range}`, {
+  headers: { "x-admin-key": adminKey },
+});
 
         const json = await res.json();
 
@@ -242,7 +246,7 @@ export default function AdminDashboard() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [range]);
 
   if (loading) return <div className="p-10">Loading analytics…</div>;
   if (error) return <div className="p-10 text-red-600">{error}</div>;
@@ -406,20 +410,52 @@ export default function AdminDashboard() {
 
   return (
     <div className="p-8 lg:p-10 space-y-12 bg-[#F7F9FC] min-h-screen">
-      {/* Header */}
-      <div className="flex items-end justify-between gap-6">
-        <div>
-          <div className="text-xs uppercase tracking-wider text-gray-500">
-            Dubai Chambers • Advisory Engine
-          </div>
-          <h1 className="text-2xl lg:text-3xl font-semibold text-[#003B5C] mt-1">
-            Executive Intelligence Dashboard
-          </h1>
-          <div className="text-sm text-gray-500 mt-2">
-            Strategic demand signals across Dubai jurisdiction, UAE inbound conversion, and international inbound.
-          </div>
-        </div>
-      </div>
+{/* Header */}
+<div className="flex items-end justify-between gap-6">
+  <div>
+    <div className="text-xs uppercase tracking-wider text-gray-500">
+      Dubai Chambers • Advisory Engine
+    </div>
+
+    <h1 className="text-2xl lg:text-3xl font-semibold text-[#003B5C] mt-1">
+      Executive Intelligence Dashboard
+    </h1>
+
+    <div className="text-sm text-gray-500 mt-2">
+      Strategic demand signals across Dubai jurisdiction, UAE inbound conversion, and international inbound.
+    </div>
+  </div>
+
+  {/* Time Range */}
+  <div className="flex gap-2">
+    <button
+      onClick={() => setRange("7d")}
+      className={`px-3 py-1 text-sm rounded-lg border ${
+        range === "7d" ? "bg-[#003B5C] text-white" : "bg-white"
+      }`}
+    >
+      7D
+    </button>
+
+    <button
+      onClick={() => setRange("30d")}
+      className={`px-3 py-1 text-sm rounded-lg border ${
+        range === "30d" ? "bg-[#003B5C] text-white" : "bg-white"
+      }`}
+    >
+      30D
+    </button>
+
+    <button
+      onClick={() => setRange("all")}
+      className={`px-3 py-1 text-sm rounded-lg border ${
+        range === "all" ? "bg-[#003B5C] text-white" : "bg-white"
+      }`}
+    >
+      ALL
+    </button>
+  </div>
+</div>
 
       {/* KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -609,16 +645,6 @@ export default function AdminDashboard() {
 /* =============================
 UI COMPONENTS
 ============================= */
-
-function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
-  return (
-    <div className="pt-2">
-      <div className="text-xs uppercase tracking-wider text-gray-500">{title}</div>
-      {subtitle ? <div className="text-sm text-gray-600 mt-1">{subtitle}</div> : null}
-    </div>
-  );
-}
-
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
