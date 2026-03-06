@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 
-import ExecutiveSignals from "../dashboard/sections/ExecutiveSignals";
-import { Panel } from "../dashboard/components/Panel";
-import { KpiCard } from "../dashboard/components/KpiCard";
-import { BarRow } from "../dashboard/components/BarRow";
-import { SectionTitle } from "../dashboard/components/SectionTitle";
-import DemandMomentum from "../dashboard/sections/DemandMomentum";
+import ExecutiveSignals from "./sections/ExecutiveSignals";
+import { Panel } from "./components/Panel";
+import { KpiCard } from "./components/KpiCard";
+import { BarRow } from "./components/BarRow";
+import { SectionTitle } from "./components/SectionTitle";
+import DemandMomentum from "./sections/DemandMomentum";
 
 
 import {
@@ -14,9 +14,9 @@ import {
   safeNum,
   normalizeKey,
   topN
-} from "../dashboard/utils/formatters";
+} from "./utils/formatters";
 
-import { computeBaseScopeMatrix } from "../dashboard/utils/aggregations";
+import { computeBaseScopeMatrix } from "./utils/aggregations";
 /* =============================
 TYPES
 ============================= */
@@ -209,12 +209,10 @@ DASHBOARD
 ============================= */
 
 export default function AdminDashboard() {
+  const [range, setRange] = useState<"7d" | "30d" | "all">("30d");
   const [data, setData] = React.useState<AnalyticsResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-
-  /* time intelligence */
-const [range, setRange] = React.useState<"7d" | "30d" | "all">("30d");
 
   // Expandable activities under sectors: key = `${block}|${region}|${sector}`
   const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
