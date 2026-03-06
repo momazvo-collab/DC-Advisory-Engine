@@ -7,7 +7,7 @@ import { StepRegion } from "./components/StepRegion";
 import { StepActivity } from "./components/StepActivity";
 import { StepServices } from "./components/StepServices";
 import { resolveServicesForUI } from "./engine/resolveServices";
-import AdminDashboard from "./pages/admindashboard";
+import AdminPage from "./pages/admin";
 
 const initialState: any = {
   location: { base: null, emirate: "", country: "" },
@@ -50,9 +50,9 @@ function reducer(state: any, action: any) {
 
 export default function App() {
   // 🔐 Admin short-circuit
-  if (window.location.pathname === "/admin") {
-    return <AdminDashboard />;
-  }
+if (typeof window !== "undefined" && window.location.pathname === "/admin") {
+  return <AdminPage />;
+}
 
   const [step, setStep] = useState(1);
   const [formState, dispatch] = useReducer(reducer, initialState);
