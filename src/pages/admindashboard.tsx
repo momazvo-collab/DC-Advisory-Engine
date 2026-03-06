@@ -178,9 +178,13 @@ function buildExecutiveSignals(data: AnalyticsResponse) {
   const total = safeNum(kpis.results_viewed);
 
   const base = computeBaseScopeMatrix(detailed_location);
-  const topSector = topN(sector_demand, 1, (s) => safeNum((s as any).count))[0]?.sector || "Unknown";
 
-  const dubaiShare = total ? `${((base.Dubai?.Total || 0) / total * 100).toFixed(1)}%` : "0%";
+  const topSector =
+    topN(sector_demand, 1, (s) => safeNum(s.count))[0]?.sector || "Unknown";
+
+  const dubaiShare = total
+    ? `${((base.Dubai?.Total || 0) / total * 100).toFixed(1)}%`
+    : "0%";
 
   return [
     { label: "Dubai demand share", value: `${formatInt(base.Dubai?.Total || 0)} (${dubaiShare})` },
@@ -188,7 +192,7 @@ function buildExecutiveSignals(data: AnalyticsResponse) {
     { label: "International inbound volume", value: formatInt(base.International?.Total || 0) },
     { label: "Top sector overall", value: topSector },
     { label: "Submit rate", value: formatPct(kpis.email_submit_rate) },
-    { label: "Click rate from viewed", value: formatPct(kpis.email_click_rate_from_viewed) },
+    { label: "Click rate from viewed", value: formatPct(kpis.email_click_rate_from_viewed) }
   ].slice(0, 6);
 }
 
@@ -572,19 +576,19 @@ export default function AdminDashboard() {
           )}
         </Panel>
 
-        <Panel title="Top activities (overall)">
-          {activity_breakdown.length === 0 ? (
-            <Empty />
-          ) : (
-            topN(activity_breakdown, 10, (a) => safeNum((a as any).count)).map((a) => (
-              <Row
-                key={a.activity_id}
-                label={`Activity ${a.activity_id} (${a.sector})`}
-                value={formatInt(a.count)}
-              />
-            ))
-          )}
-        </Panel>
+<Panel title="Top activities (overall)">
+  {activity_breakdown.length === 0 ? (
+    <Empty />
+  ) : (
+    topN(activity_breakdown, 10, (a) => safeNum(a.count)).map((a) => (
+      <Row
+        key={a.activity_id}
+        label={`Activity ${a.activity_id} (${a.sector})`}
+        value={formatInt(a.count)}
+      />
+    ))
+  )}
+</Panel>
       </div>
 
       {/* Data note */}
