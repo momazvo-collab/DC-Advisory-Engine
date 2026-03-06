@@ -5,9 +5,10 @@ import {
   formatPct,
   safeNum,
   normalizeKey,
-  sumCounts,
   topN
 } from "../dashboard/utils/formatters";
+
+import { computeBaseScopeMatrix } from "../dashboard/utils/aggregations";
 /* =============================
 TYPES
 ============================= */
@@ -56,35 +57,8 @@ type AnalyticsResponse = {
 };
 
 /* =============================
-UTILS
-============================= */
-
-
-/* =============================
 AGGREGATIONS (UI-only intelligence)
 ============================= */
-
-function computeBaseScopeMatrix(detailed: DetailedLocation[]) {
-  // returns { [base]: { Local: x, International: y, Total: z } }
-  const bases = ["Dubai", "UAE", "International"] as const;
-  const out: Record<string, { Local: number; International: number; Total: number }> = {};
-
-  for (const b of bases) out[b] = { Local: 0, International: 0, Total: 0 };
-
-  for (const r of detailed || []) {
-    const base = normalizeKey(r.location_base);
-    const scope = normalizeKey(r.scope);
-    const c = safeNum(r.count);
-
-    if (!out[base]) out[base] = { Local: 0, International: 0, Total: 0 };
-
-    if (scope === "Local") out[base].Local += c;
-    else if (scope === "International") out[base].International += c;
-    out[base].Total += c;
-  }
-
-  return out;
-}
 
 function computeUaeEmiratesTable(detailed: DetailedLocation[]) {
   // UAE only, grouped by emirate with Local/International/Total
