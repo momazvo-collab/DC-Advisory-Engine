@@ -9,15 +9,17 @@ type DetailedLocation = {
   count: number;
 };
 
+type BaseKey = "Dubai" | "UAE" | "International";
+
 export function computeBaseScopeMatrix(detailed: DetailedLocation[]) {
-  const base = {
+  const base: Record<BaseKey, { Local: number; International: number; Total: number }> = {
     Dubai: { Local: 0, International: 0, Total: 0 },
     UAE: { Local: 0, International: 0, Total: 0 },
     International: { Local: 0, International: 0, Total: 0 }
   };
 
   for (const r of detailed || []) {
-    const locationBase = normalizeKey(r.location_base);
+    const locationBase = normalizeKey(r.location_base) as BaseKey;
     const scope = normalizeKey(r.scope);
     const count = safeNum(r.count);
 
