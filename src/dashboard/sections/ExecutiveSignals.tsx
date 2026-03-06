@@ -1,5 +1,5 @@
 import React from "react";
-import InsightCard from "../components/InsightCard";
+import { InsightCard } from "../components/InsightCard";
 
 type Signal = {
   label: string;
