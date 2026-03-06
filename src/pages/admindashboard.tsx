@@ -1,5 +1,13 @@
 import React from "react";
 
+import {
+  formatInt,
+  formatPct,
+  safeNum,
+  normalizeKey,
+  sumCounts,
+  topN
+} from "../dashboard/utils/formatters";
 /* =============================
 TYPES
 ============================= */
@@ -51,32 +59,6 @@ type AnalyticsResponse = {
 UTILS
 ============================= */
 
-function formatInt(v: number) {
-  return new Intl.NumberFormat().format(Number.isFinite(v) ? v : 0);
-}
-
-function formatPct(v: number) {
-  const n = Number.isFinite(v) ? v : 0;
-  return `${(n * 100).toFixed(1)}%`;
-}
-
-function safeNum(n: any) {
-  const v = Number(n);
-  return Number.isFinite(v) ? v : 0;
-}
-
-function normalizeKey(s: any) {
-  const v = String(s ?? "").trim();
-  return v.length ? v : "Unknown";
-}
-
-function sumCounts(rows: { count: number }[]) {
-  return rows.reduce((acc, r) => acc + safeNum(r.count), 0);
-}
-
-function topN<T>(rows: T[], n: number, getCount: (t: T) => number) {
-  return [...(rows || [])].sort((a, b) => getCount(b) - getCount(a)).slice(0, n);
-}
 
 /* =============================
 AGGREGATIONS (UI-only intelligence)
