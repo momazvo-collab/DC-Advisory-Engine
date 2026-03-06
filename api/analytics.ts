@@ -154,31 +154,47 @@ export default async function handler(req: any, res: any) {
       console.error("Sector-scope demand RPC error:", sectorScopeError);
       return res.status(500).json({ error: "Failed to load sector-scope demand" });
     }
+// -------------------------------
+// 8️⃣ International Region + Sector Demand
+// -------------------------------
+const { data: regionSectorDemand, error: regionSectorError } =
+  await supabase.rpc("analytics_region_sector_demand", {
+    p_from: dateFrom,
+    p_to: dateTo,
+  });
 
-    // -------------------------------
-    // 8️⃣ International Region + Sector Demand (NEW)
-    // -------------------------------
-    const { data: regionSectorDemand, error: regionSectorError } =
-      await supabase.rpc("analytics_region_sector_demand", {
-        p_from: dateFrom,
-        p_to: dateTo,
-      });
+if (regionSectorError) {
+  console.error("Region-sector demand RPC error:", regionSectorError);
+  return res.status(500).json({ error: "Failed to load region-sector demand" });
+}
 
-    if (regionSectorError) {
-      console.error("Region-sector demand RPC error:", regionSectorError);
-      return res.status(500).json({ error: "Failed to load region-sector demand" });
-    }
+// -------------------------------
+// 9️⃣ Region + Sector + Activity Demand (NEW)
+// -------------------------------
+const { data: regionSectorActivityDemand, error: regionSectorActivityError } =
+  await supabase.rpc("analytics_region_sector_activity_demand", {
+    p_from: dateFrom,
+    p_to: dateTo,
+  });
 
-    return res.status(200).json({
-      kpis: kpis ?? {},
-      top_services: topServices ?? [],
-      detailed_location: detailedLocation ?? [],
-      activity_breakdown: activityBreakdown ?? [],
-      region_demand: regionDemand ?? [],
-      sector_demand: sectorDemand ?? [],
-      sector_scope_demand: sectorScopeDemand ?? [],
-      region_sector_demand: regionSectorDemand ?? [],
-    });
+if (regionSectorActivityError) {
+  console.warn(
+    "Region-sector-activity demand RPC not available yet:",
+    regionSectorActivityError
+  );
+}
+
+return res.status(200).json({
+  kpis: kpis ?? {},
+  top_services: topServices ?? [],
+  detailed_location: detailedLocation ?? [],
+  activity_breakdown: activityBreakdown ?? [],
+  region_demand: regionDemand ?? [],
+  sector_demand: sectorDemand ?? [],
+  sector_scope_demand: sectorScopeDemand ?? [],
+  region_sector_demand: regionSectorDemand ?? [],
+  region_sector_activity_demand: regionSectorActivityDemand ?? [],
+});
   } catch (error) {
     console.error("Analytics API fatal error:", error);
     return res.status(500).json({ error: "Failed to load analytics" });
