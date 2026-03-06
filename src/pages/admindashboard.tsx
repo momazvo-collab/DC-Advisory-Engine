@@ -5,6 +5,7 @@ import { Panel } from "../dashboard/components/Panel";
 import { KpiCard } from "../dashboard/components/KpiCard";
 import { BarRow } from "../dashboard/components/BarRow";
 import { SectionTitle } from "../dashboard/components/SectionTitle";
+import DemandMomentum from "../dashboard/sections/DemandMomentum";
 
 import {
   formatInt,
@@ -264,6 +265,21 @@ const res = await fetch(`/api/analytics?range=${range}`, {
   } = data;
 
   const signals = buildExecutiveSignals(data);
+const momentumSectors = [...sector_demand]
+  .sort((a, b) => b.count - a.count)
+  .slice(0, 5)
+  .map((s) => ({
+    label: s.sector,
+    value: s.count
+  }));
+
+const momentumRegions = [...region_demand]
+  .sort((a, b) => b.count - a.count)
+  .slice(0, 5)
+  .map((r) => ({
+    label: r.region,
+    value: r.count
+  }));
 
   // Jurisdiction Matrix
   const baseMatrix = computeBaseScopeMatrix(detailed_location);
@@ -468,6 +484,16 @@ const res = await fetch(`/api/analytics?range=${range}`, {
 {/* Executive Signals */}
 <ExecutiveSignals signals={signals} />
 
+{/* Demand Momentum */}
+<SectionTitle
+  title="Demand momentum"
+  subtitle="Signals of emerging growth across sectors and regions."
+/>
+
+<DemandMomentum
+  sectors={momentumSectors}
+  regions={momentumRegions}
+/>
       {/* Jurisdiction Snapshot */}
       <SectionTitle
         title="Jurisdiction snapshot"
