@@ -330,10 +330,7 @@ const heatmapData = region_sector_demand.map((r) => ({
 }));
 
   const signals = buildExecutiveSignals(data);
-  const sectorTrends = computeTrendSignals(
-  sector_demand,
-  sector_demand
-).slice(0,5);
+
 const momentumSectors = [...sector_demand]
   .sort((a, b) => b.count - a.count)
   .slice(0, 5)
@@ -566,30 +563,6 @@ const totalSubmissions =
 {/* Executive Signals */}
 <ExecutiveSignals signals={signals} />
 
-{/* Demand Momentum */}
-<SectionTitle
-  title="Demand momentum"
-  subtitle="Signals of emerging growth across sectors and regions."
-/>
-
-<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-  {sectorTrends.map((s) => (
-    <div
-      key={s.sector}
-      className="flex justify-between items-center bg-white rounded-lg p-4 border"
-    >
-      <span className="font-medium text-gray-800">{s.sector}</span>
-
-      <span
-        className={`font-semibold ${
-          s.change >= 0 ? "text-green-600" : "text-red-600"
-        }`}
-      >
-        {s.change >= 0 ? "▲" : "▼"} {Math.abs(s.change).toFixed(1)}%
-      </span>
-    </div>
-  ))}
-</div>
 
   <Panel title="Total demand signals">
   <div className="text-4xl font-semibold text-[#003B5C]">
