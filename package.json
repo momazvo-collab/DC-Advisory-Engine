@@ -12,6 +12,7 @@
     "@supabase/supabase-js": "^2.98.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-simple-maps": "^3.0.0",
     "recharts": "^3.8.0",
     "resend": "^6.9.3"
   },
@@ -19,6 +20,7 @@
     "@types/node": "^25.3.2",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
+    "@types/react-simple-maps": "^3.0.6",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",

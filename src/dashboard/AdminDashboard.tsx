@@ -7,6 +7,7 @@ import { BarRow } from "./components/BarRow";
 import { SectionTitle } from "./components/SectionTitle";
 import DemandMomentum from "./sections/DemandMomentum";
 import RegionSectorHeatmap from "./visualizations/RegionSectorHeatmap";
+import GlobalDemandMap from "./visualizations/GlobalDemanMap";
 
 
 import {
@@ -283,6 +284,8 @@ const res = await fetch(`/api/analytics?range=${range}`, {
     sector_scope_demand = [],
     region_sector_demand = [],
   } = data;
+  const worldMapData = detailed_location;
+
 const heatmapData = region_sector_demand.map((r) => ({
   region: r.region,
   sector: r.sector,
@@ -623,6 +626,15 @@ const momentumRegions = [...region_demand]
           </div>
         )}
       </Panel>
+
+<SectionTitle
+  title="Global demand for Dubai services"
+  subtitle="Countries generating inbound demand signals."
+/>
+
+<Panel title="Global demand map">
+  <GlobalDemandMap data={worldMapData} />
+</Panel>
 
       {/* Expansion Intelligence: Option B */}
       <SectionTitle
