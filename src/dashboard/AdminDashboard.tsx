@@ -233,7 +233,7 @@ function buildExecutiveSignals(data: AnalyticsResponse) {
   // Top inbound other emirate
   const emirateMap = new Map<string, number>();
   detailed_location.forEach((r) => {
-    if (normalizeKey(r.location_base) !== "UAE") return;
+    if (normalizeKey(r.location_base) !== "uae") return;
 
     const emirate = normalizeKey(r.emirate);
     emirateMap.set(emirate, (emirateMap.get(emirate) || 0) + safeNum(r.count));
