@@ -6,6 +6,7 @@ import { KpiCard } from "./components/KpiCard";
 import { BarRow } from "./components/BarRow";
 import { SectionTitle } from "./components/SectionTitle";
 import DemandMomentum from "./sections/DemandMomentum";
+import RegionSectorHeatmap from "./visualizations/RegionSectorHeatmap";
 
 
 import {
@@ -282,6 +283,11 @@ const res = await fetch(`/api/analytics?range=${range}`, {
     sector_scope_demand = [],
     region_sector_demand = [],
   } = data;
+const heatmapData = region_sector_demand.map((r) => ({
+  region: r.region,
+  sector: r.sector,
+  count: r.count
+}));
 
   const signals = buildExecutiveSignals(data);
   const sectorTrends = computeTrendSignals(
@@ -639,6 +645,15 @@ const momentumRegions = [...region_demand]
           regions={uaeExpansionRegions}
         />
       </div>
+
+<SectionTitle
+  title="Region → Sector demand heatmap"
+  subtitle="Visual intensity of sector demand by expansion region."
+/>
+
+<Panel title="Region sector demand matrix">
+  <RegionSectorHeatmap data={heatmapData} />
+</Panel>
 
       {/* Market Demand */}
       <SectionTitle title="Market demand signals" subtitle="High-level demand mix for context." />
