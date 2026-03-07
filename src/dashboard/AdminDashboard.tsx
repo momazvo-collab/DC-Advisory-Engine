@@ -5,11 +5,10 @@ import { Panel } from "./components/Panel";
 import { KpiCard } from "./components/KpiCard";
 import { BarRow } from "./components/BarRow";
 import { SectionTitle } from "./components/SectionTitle";
-import DemandMomentum from "./sections/DemandMomentum";
 import RegionSectorHeatmap from "./visualizations/RegionSectorHeatmap";
 import GlobalDemandMap from "./visualizations/GlobalDemandMap";
 import UAEEmiratesMap from "./visualizations/UAEEmiratesMap";
-import GlobalDemandOverview from "./sections/GlobalDemandOverview";
+
 
 
 import {
@@ -170,18 +169,35 @@ function buildRegionToSectorIndex(regionSector: RegionSectorDemand[]) {
 }
 
 function buildSectorToActivitiesIndex(activityBreakdown: ActivityBreakdown[]) {
-  // { sector: [{activity_id,count}...] } (we do NOT show subsector, per your instruction)
-  const m = new Map<string, { activity_id: string; count: number }[]>();
+  // { sector: [{activity_id, activity_name, count}...] }
+
+  const m = new Map<
+    string,
+    { activity_id: string; activity_name: string; count: number }[]
+  >();
+
   for (const a of activityBreakdown || []) {
     const sector = normalizeKey(a.sector);
     const activity_id = normalizeKey(a.activity_id);
+    const activity_name = a.activity_name;
     const count = safeNum(a.count);
+
     if (!m.has(sector)) m.set(sector, []);
-    m.get(sector)!.push({ activity_id, count });
+
+    m.get(sector)!.push({
+      activity_id,
+      activity_name,
+      count
+    });
   }
+
   for (const [k, arr] of m.entries()) {
-    m.set(k, arr.sort((x, y) => y.count - x.count));
+    m.set(
+      k,
+      arr.sort((x, y) => y.count - x.count)
+    );
   }
+
   return m;
 }
 
@@ -332,9 +348,9 @@ const momentumRegions = [...region_demand]
   const countries = computeInternationalCountriesTable(detailed_location);
   const countriesRows = (showAllCountries ? countries : countries.slice(0, 6));
 
-  // Expansion region totals per base
-  const dubaiExpansionRegions = computeDubaiExpansionRegions(detailed_location);
-  const uaeExpansionRegions = computeUaeExpansionRegions(detailed_location);
+// Disabled for simplified dashboard
+// const dubaiExpansionRegions = computeDubaiExpansionRegions(detailed_location);
+// const uaeExpansionRegions = computeUaeExpansionRegions(detailed_location);
 
   // Region → Sector (available, but NOT base-specific in current payload)
   const regionToSectors = buildRegionToSectorIndex(region_sector_demand);
@@ -435,12 +451,16 @@ const momentumRegions = [...region_demand]
                                   {activities.length === 0 ? (
                                     <div className="text-sm text-gray-500">No activity data yet.</div>
                                   ) : (
-                                    activities.map((a) => (
-                                      <div key={a.activity_id} className="flex justify-between text-sm">
-                                        <span className="text-gray-700">Activity {a.activity_id}</span>
-                                        <span className="font-semibold text-gray-900">{formatInt(a.count)}</span>
-                                      </div>
-                                    ))
+activities.map((a) => (
+  <div key={a.activity_id} className="flex justify-between text-sm">
+    <span className="text-gray-700">
+      {a.activity_name ?? `Activity ${a.activity_id}`}
+    </span>
+    <span className="font-semibold text-gray-900">
+      {formatInt(a.count)}
+    </span>
+  </div>
+))
                                   )}
                                 </div>
                               </div>
@@ -482,7 +502,7 @@ const totalSubmissions =
     </h1>
 
     <div className="text-sm text-gray-500 mt-2">
-      Strategic demand signals across Dubai jurisdiction, UAE inbound conversion, and international inbound.
+      Demand signals across Dubai, other UAE emirates, and international markets.
     </div>
   </div>
 
@@ -593,10 +613,10 @@ const totalSubmissions =
 
       {/* UAE Conversion Intelligence */}
       <SectionTitle
-        title="UAE conversion intelligence"
+        title="Other Emirates Demand"
         subtitle="Other emirates showing demand — a pipeline for Dubai Chambers membership conversion."
       />
-      <Panel title="Top UAE emirates (Local + International)">
+      <Panel title="Demand by UAE emirate">
         {uaeEmiratesRows.length === 0 ? (
           <Empty />
         ) : (
@@ -627,11 +647,11 @@ const totalSubmissions =
 </Panel>
 
       {/* International Inbound Intelligence */}
-      <SectionTitle
-        title="International inbound intelligence"
-        subtitle="Which countries show demand for Dubai — segmented by scope."
-      />
-      <Panel title="Top inbound countries (Local + International)">
+     <SectionTitle
+  title="International Demand"
+  subtitle="Foreign businesses requesting advisory support related to Dubai."
+/>
+      <Panel title="International Demand by country">
         {countriesRows.length === 0 ? (
           <Empty />
         ) : (
@@ -653,36 +673,36 @@ const totalSubmissions =
       </Panel>
 
 <SectionTitle
-  title="Global demand for Dubai services"
-  subtitle="Countries generating inbound demand signals."
+  title="International demand map"
+  subtitle="Global distribution of businesses interested in Dubai."
 />
 
 <Panel title="Global demand map">
   <GlobalDemandMap data={worldMapData} />
 </Panel>
 
-      {/* Expansion Intelligence: Option B */}
-      <SectionTitle
-        title="Expansion intelligence"
-        subtitle="Option B: Region → Sector, with expandable activities (activities shown are sector-level overall until region-activity RPC is added)."
-      />
+{/*
+<SectionTitle
+  title="Expansion intelligence"
+  subtitle="Option B: Region → Sector, with expandable activities (activities shown are sector-level overall until region-activity RPC is added)."
+/>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RegionSectorBlock
-          blockKey="dubai-expansion"
-          title="Dubai companies seeking expansion"
-          subtitle="Filtered to Dubai + scope=International. Regions are Dubai-specific."
-          regions={dubaiExpansionRegions}
-        />
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <RegionSectorBlock
+    blockKey="dubai-expansion"
+    title="Dubai companies seeking expansion"
+    subtitle="Filtered to Dubai + scope=International. Regions are Dubai-specific."
+    regions={dubaiExpansionRegions}
+  />
 
-        <RegionSectorBlock
-          blockKey="uae-expansion"
-          title="UAE (other emirates) seeking expansion"
-          subtitle="Filtered to UAE + scope=International. Regions are UAE-specific."
-          regions={uaeExpansionRegions}
-        />
-      </div>
-
+  <RegionSectorBlock
+    blockKey="uae-expansion"
+    title="UAE (other emirates) seeking expansion"
+    subtitle="Filtered to UAE + scope=International. Regions are UAE-specific."
+    regions={uaeExpansionRegions}
+  />
+</div>
+*/}
 <SectionTitle
   title="Region → Sector demand heatmap"
   subtitle="Visual intensity of sector demand by expansion region."
@@ -718,13 +738,13 @@ const totalSubmissions =
         <Empty />
       ) : (
         <div className="space-y-2">
-          {topN(activity_breakdown, 10, (a) => safeNum(a.count)).map((a) => (
-            <Row
-              key={a.activity_id}
-              label={`Activity ${a.activity_id} (${a.sector})`}
-              value={formatInt(a.count)}
-            />
-          ))}
+{topN(activity_breakdown, 10, (a) => safeNum(a.count)).map((a) => (
+  <Row
+    key={a.activity_id}
+    label={a.activity_name}
+    value={formatInt(a.count)}
+  />
+))}
         </div>
       )}
     </Panel>
