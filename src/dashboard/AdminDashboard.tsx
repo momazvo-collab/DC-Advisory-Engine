@@ -7,8 +7,9 @@ import { BarRow } from "./components/BarRow";
 import { SectionTitle } from "./components/SectionTitle";
 import DemandMomentum from "./sections/DemandMomentum";
 import RegionSectorHeatmap from "./visualizations/RegionSectorHeatmap";
-import GlobalDemandMap from "./visualizations/TempMap";
+import GlobalDemandMap from "./visualizations/GlobalDemandMap";
 import UAEEmiratesMap from "./visualizations/UAEEmiratesMap";
+import GlobalDemandOverview from "./sections/GlobalDemandOverview";
 
 
 import {
@@ -511,13 +512,13 @@ const momentumRegions = [...region_demand]
   </div>
 </div>
 
-      {/* KPI Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Results Viewed" value={formatInt(kpis.results_viewed)} />
-        <KpiCard label="Emails Submitted" value={formatInt(kpis.email_submitted)} />
-        <KpiCard label="Submit Rate" value={formatPct(kpis.email_submit_rate)} />
-        <KpiCard label="Click Rate from Viewed" value={formatPct(kpis.email_click_rate_from_viewed)} />
-      </div>
+{/* KPI Row */}
+<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+  <KpiCard label="Results viewed" value={formatInt(kpis.results_viewed)} />
+  <KpiCard label="Emails submitted" value={formatInt(kpis.email_submitted)} />
+  <KpiCard label="Submit rate" value={formatPct(kpis.email_submit_rate)} />
+  <KpiCard label="Click rate from viewed" value={formatPct(kpis.email_click_rate_from_viewed)} />
+</div>
 
 {/* Executive Signals */}
 <ExecutiveSignals signals={signals} />
@@ -681,73 +682,55 @@ const momentumRegions = [...region_demand]
   <RegionSectorHeatmap data={heatmapData} />
 </Panel>
 
-      {/* Market Demand */}
-      <SectionTitle title="Market demand signals" subtitle="High-level demand mix for context." />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Panel title="Top sectors (overall)">
-          {sectorOverallSorted.length === 0 ? (
-            <Empty />
-          ) : (
-            <div className="space-y-2">
-              {sectorOverallSorted.map((s, i) => (
-                <BarRow key={i} label={s.sector} value={s.count} max={sectorOverallSorted[0].count || 1} />
-              ))}
-            </div>
-          )}
-        </Panel>
 
-        <Panel title="Top expansion regions (overall)">
-          {regionDemandSorted.length === 0 ? (
-            <Empty />
-          ) : (
-            <div className="space-y-2">
-              {regionDemandSorted.map((r, i) => (
-                <BarRow key={i} label={r.region} value={r.count} max={regionDemandSorted[0].count || 1} />
-              ))}
-            </div>
-          )}
-        </Panel>
-      </div>
+  {/* Engagement */}
+  <SectionTitle
+    title="Engagement signals"
+    subtitle="What users actually click and ask for."
+  />
 
-      {/* Engagement */}
-      <SectionTitle title="Engagement signals" subtitle="What users actually click and ask for." />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Panel title="Top clicked email services">
-          {topServicesSorted.length === 0 ? (
-            <Empty />
-          ) : (
-            topServicesSorted.map((s) => (
-              <Row key={s.service_id} label={s.service_id} value={formatInt(s.click_count)} />
-            ))
-          )}
-        </Panel>
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-<Panel title="Top activities (overall)">
-  {activity_breakdown.length === 0 ? (
-    <Empty />
-  ) : (
-    topN(activity_breakdown, 10, (a) => safeNum(a.count)).map((a) => (
-      <Row
-        key={a.activity_id}
-        label={`Activity ${a.activity_id} (${a.sector})`}
-        value={formatInt(a.count)}
-      />
-    ))
-  )}
-</Panel>
-      </div>
-
-      {/* Data note */}
-      <div className="rounded-2xl border bg-white p-6 shadow-sm">
-        <div className="text-sm font-semibold text-[#003B5C]">Data note</div>
-        <div className="mt-2 text-sm text-gray-600 leading-relaxed">
-          Region → Sector is supported by <span className="font-semibold">region_sector_demand</span>.
-          Activities are expandable per sector using <span className="font-semibold">activity_breakdown</span>, which is currently{" "}
-          <span className="font-semibold">not keyed by region/emirate/country</span>. When you add an RPC that returns
-          <span className="font-semibold"> region + sector + activity_id</span> (and optionally location_base), the activity drill-down
-          will become region-accurate with no UI redesign.
+    <Panel title="Top clicked email services">
+      {topServicesSorted.length === 0 ? (
+        <Empty />
+      ) : (
+        <div className="space-y-2">
+          {topServicesSorted.map((s) => (
+            <Row key={s.service_id} label={s.service_id} value={formatInt(s.click_count)} />
+          ))}
         </div>
-      </div>
+      )}
+    </Panel>
+
+    <Panel title="Top activities (overall)">
+      {activity_breakdown.length === 0 ? (
+        <Empty />
+      ) : (
+        <div className="space-y-2">
+          {topN(activity_breakdown, 10, (a) => safeNum(a.count)).map((a) => (
+            <Row
+              key={a.activity_id}
+              label={`Activity ${a.activity_id} (${a.sector})`}
+              value={formatInt(a.count)}
+            />
+          ))}
+        </div>
+      )}
+    </Panel>
+  </div>
+
+  {/* Data note */}
+  <div className="rounded-2xl border bg-white p-6 shadow-sm">
+    <div className="text-sm font-semibold text-[#003B5C]">Data note</div>
+    <div className="mt-2 text-sm text-gray-600 leading-relaxed">
+      Region → Sector is supported by <span className="font-semibold">region_sector_demand</span>.
+      Activities are expandable per sector using <span className="font-semibold">activity_breakdown</span>, which is currently{" "}
+      <span className="font-semibold">not keyed by region/emirate/country</span>. When you add an RPC that returns
+      <span className="font-semibold"> region + sector + activity_id</span> (and optionally location_base), the activity drill-down
+      will become region-accurate with no UI redesign.
+    </div>
+  </div>
     </div>
   );
 }
