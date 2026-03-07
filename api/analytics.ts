@@ -38,18 +38,31 @@ export default async function handler(req: any, res: any) {
 
     const q = (req.query || {}) as any;
 
-    // -------------------------------
-    // Date Range Handling
-    // -------------------------------
-    const now = new Date();
-    const defaultTo = now.toISOString();
-    const defaultFrom = new Date(
-      now.getTime() - 30 * 24 * 60 * 60 * 1000
-    ).toISOString();
 
-    const dateFrom = q.from ? new Date(q.from).toISOString() : defaultFrom;
-    const dateTo = q.to ? new Date(q.to).toISOString() : defaultTo;
+// -------------------------------
+// Date Range Handling
+// -------------------------------
+const now = new Date();
 
+let dateFrom: string;
+let dateTo: string = now.toISOString();
+
+if (q.range === "7d") {
+  dateFrom = new Date(
+    now.getTime() - 7 * 24 * 60 * 60 * 1000
+  ).toISOString();
+}
+
+else if (q.range === "30d") {
+  dateFrom = new Date(
+    now.getTime() - 30 * 24 * 60 * 60 * 1000
+  ).toISOString();
+}
+
+else {
+  // ALL data
+  dateFrom = new Date(0).toISOString();
+}
     // -------------------------------
     // KPI Params
     // -------------------------------
@@ -172,14 +185,11 @@ if (regionSectorError) {
 // 9️⃣ Region + Sector + Activity Demand (NEW)
 // -------------------------------
 const { data: regionSectorActivityDemand, error: regionSectorActivityError } =
-  await supabase.rpc("analytics_region_sector_activity_demand", {
-    p_from: dateFrom,
-    p_to: dateTo,
-  });
+  await supabase.rpc("region_sector_activity_demand");
 
 if (regionSectorActivityError) {
   console.warn(
-    "Region-sector-activity demand RPC not available yet:",
+    "Region-sector-activity demand RPC error:",
     regionSectorActivityError
   );
 }
