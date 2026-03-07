@@ -462,6 +462,10 @@ const momentumRegions = [...region_demand]
   const sectorOverallSorted = [...sector_demand].sort((a, b) => b.count - a.count).slice(0, 10);
   const regionDemandSorted = [...region_demand].sort((a, b) => b.count - a.count).slice(0, 10);
   const topServicesSorted = [...top_services].sort((a, b) => b.click_count - a.click_count).slice(0, 10);
+const totalSubmissions =
+  (baseMatrix.Dubai?.Total || 0) +
+  (baseMatrix.UAE?.Total || 0) +
+  (baseMatrix.International?.Total || 0);
 
   return (
     <div className="p-8 lg:p-10 space-y-12 bg-[#F7F9FC] min-h-screen">
@@ -548,10 +552,15 @@ const momentumRegions = [...region_demand]
   ))}
 </div>
 
-<DemandMomentum
-  sectors={momentumSectors}
-  regions={momentumRegions}
-/>
+  <Panel title="Total demand signals">
+  <div className="text-4xl font-semibold text-[#003B5C]">
+    {formatInt(totalSubmissions)}
+  </div>
+  <div className="text-sm text-gray-500 mt-2">
+    Total advisory submissions across all jurisdictions
+  </div>
+</Panel>
+
       {/* Jurisdiction Snapshot */}
       <SectionTitle
         title="Jurisdiction snapshot"
