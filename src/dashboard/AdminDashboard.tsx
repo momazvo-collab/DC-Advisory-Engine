@@ -8,6 +8,7 @@ import { SectionTitle } from "./components/SectionTitle";
 import DemandMomentum from "./sections/DemandMomentum";
 import RegionSectorHeatmap from "./visualizations/RegionSectorHeatmap";
 import GlobalDemandMap from "./visualizations/TempMap";
+import UAEEmiratesMap from "./visualizations/UAEEmiratesMap";
 
 
 import {
@@ -76,7 +77,7 @@ function computeUaeEmiratesTable(detailed: DetailedLocation[]) {
 
   for (const r of detailed || []) {
     if (normalizeKey(r.location_base) !== "UAE") continue;
-    const emirate = normalizeKey(r.emirate);
+    const emirate = normalizeKey(r.emirate || "Unknown");
     const scope = normalizeKey(r.scope);
     const c = safeNum(r.count);
 
@@ -319,6 +320,10 @@ const momentumRegions = [...region_demand]
 
   // UAE Emirates table (conversion lens)
   const uaeEmirates = computeUaeEmiratesTable(detailed_location);
+  const uaeHeatmapData = uaeEmirates.map((e) => ({
+  emirate: e.emirate,
+  Total: e.Total
+}));
   const uaeEmiratesRows = (showAllUaeEmirates ? uaeEmirates : uaeEmirates.slice(0, 6));
 
   // International inbound countries
@@ -600,6 +605,15 @@ const momentumRegions = [...region_demand]
           </div>
         )}
       </Panel>
+
+<SectionTitle
+  title="UAE emirate demand heatmap"
+  subtitle="Demand signals across UAE emirates outside Dubai."
+/>
+
+<Panel title="UAE emirate demand intensity">
+  <UAEEmiratesMap data={uaeHeatmapData} />
+</Panel>
 
       {/* International Inbound Intelligence */}
       <SectionTitle
