@@ -38,8 +38,9 @@ type DetailedLocation = {
 
 type ActivityBreakdown = {
   activity_id: string;
+  activity_name: string;
   sector: string;
-  subsector: string; // we won't display it (per your instruction)
+  subsector: string;
   count: number;
 };
 
