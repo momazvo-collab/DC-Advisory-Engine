@@ -202,48 +202,66 @@ function buildSectorToActivitiesIndex(activityBreakdown: ActivityBreakdown[]) {
 }
 
 function buildExecutiveSignals(data: AnalyticsResponse) {
-  const { kpis, detailed_location, sector_demand } = data;
+  const {
+    top_services,
+    sector_demand,
+    activity_breakdown,
+    region_demand,
+    detailed_location
+  } = data;
 
-  const total = safeNum(kpis.results_viewed);
+  const topService = top_services?.[0]?.service_id || "Unknown";
+  const topSector = sector_demand?.[0]?.sector || "Unknown";
+  const topActivity = activity_breakdown?.[0]?.activity_name || "Unknown";
 
-  const base = computeBaseScopeMatrix(detailed_location);
+  // Top outbound expansion region (Dubai + International)
+  const dubaiRegions = detailed_location.filter(
+    (r) =>
+      normalizeKey(r.location_base) === "Dubai" &&
+      normalizeKey(r.scope) === "International"
+  );
 
-  const topSector =
-    topN(sector_demand, 1, (s) => safeNum(s.count))[0]?.sector || "Unknown";
+  const regionMap = new Map<string, number>();
+  dubaiRegions.forEach((r) => {
+    const region = normalizeKey(r.region);
+    regionMap.set(region, (regionMap.get(region) || 0) + safeNum(r.count));
+  });
 
-  const dubaiShare = total
-    ? `${((base.Dubai?.Total || 0) / total * 100).toFixed(1)}%`
-    : "0%";
+  const topRegion =
+    [...regionMap.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "Unknown";
+
+  // Top inbound other emirate
+  const emirateMap = new Map<string, number>();
+  detailed_location.forEach((r) => {
+    if (normalizeKey(r.location_base) !== "UAE") return;
+
+    const emirate = normalizeKey(r.emirate);
+    emirateMap.set(emirate, (emirateMap.get(emirate) || 0) + safeNum(r.count));
+  });
+
+  const topEmirate =
+    [...emirateMap.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "Unknown";
+
+  // Top international inbound country
+  const countryMap = new Map<string, number>();
+  detailed_location.forEach((r) => {
+    if (normalizeKey(r.location_base) !== "International") return;
+
+    const country = normalizeKey(r.country);
+    countryMap.set(country, (countryMap.get(country) || 0) + safeNum(r.count));
+  });
+
+  const topCountry =
+    [...countryMap.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "Unknown";
 
   return [
-    { label: "Dubai demand share", value: `${formatInt(base.Dubai?.Total || 0)} (${dubaiShare})` },
-    { label: "UAE inbound volume", value: formatInt(base.UAE?.Total || 0) },
-    { label: "International inbound volume", value: formatInt(base.International?.Total || 0) },
-    { label: "Top sector overall", value: topSector },
-    { label: "Submit rate", value: formatPct(kpis.email_submit_rate) },
-    { label: "Click rate from viewed", value: formatPct(kpis.email_click_rate_from_viewed) }
-  ].slice(0, 6);
-}
-function computeTrendSignals(
-  current: SectorDemand[],
-  previous: SectorDemand[]
-) {
-  const prevMap = new Map(previous.map(p => [p.sector, p.count]));
-
-  return current.map(c => {
-    const prev = prevMap.get(c.sector) || 0;
-
-    const change =
-      prev === 0
-        ? 100
-        : ((c.count - prev) / prev) * 100;
-
-    return {
-      sector: c.sector,
-      count: c.count,
-      change
-    };
-  }).sort((a, b) => b.change - a.change);
+    { label: "Top service", value: topService },
+    { label: "Top sector", value: topSector },
+    { label: "Top activity", value: topActivity },
+    { label: "Top expansion region", value: topRegion },
+    { label: "Top other emirate", value: topEmirate },
+    { label: "Top inbound country", value: topCountry }
+  ];
 }
 /* =============================
 DASHBOARD
