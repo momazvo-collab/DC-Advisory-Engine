@@ -6,7 +6,7 @@ import { KpiCard } from "./components/KpiCard";
 import { BarRow } from "./components/BarRow";
 import { SectionTitle } from "./components/SectionTitle";
 import RegionSectorHeatmap from "./visualizations/RegionSectorHeatmap";
-import GlobalDemandMap from "./visualizations/GlobalDemandMap";
+// import GlobalDemandMap from "./visualizations/GlobalDemandMap";
 import UAEEmiratesMap from "./visualizations/UAEEmiratesMap";
 
 
@@ -672,6 +672,7 @@ const totalSubmissions =
         )}
       </Panel>
 
+{/*
 <SectionTitle
   title="International demand map"
   subtitle="Global distribution of businesses interested in Dubai."
@@ -680,6 +681,7 @@ const totalSubmissions =
 <Panel title="Global demand map">
   <GlobalDemandMap data={worldMapData} />
 </Panel>
+*/}
 
 {/*
 <SectionTitle
