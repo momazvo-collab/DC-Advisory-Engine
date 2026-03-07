@@ -7,7 +7,7 @@ import { BarRow } from "./components/BarRow";
 import { SectionTitle } from "./components/SectionTitle";
 import DemandMomentum from "./sections/DemandMomentum";
 import RegionSectorHeatmap from "./visualizations/RegionSectorHeatmap";
-import GlobalDemandMap from "./visualizations/GlobalDemanMap";
+import GlobalDemandMap from "./visualizations/TempMap";
 
 
 import {
