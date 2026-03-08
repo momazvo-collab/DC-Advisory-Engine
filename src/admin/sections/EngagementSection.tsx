@@ -3,15 +3,17 @@ import React from "react";
 import { Panel } from "../../dashboard/components/Panel";
 import { SectionTitle } from "../../dashboard/components/SectionTitle";
 
-import type { ActivityBreakdown, TopService } from "../intelligence/demandAggregations";
+import type { ActivityBreakdown, Kpis, TopService } from "../intelligence/demandAggregations";
 
 export default function EngagementSection({
+  kpis,
   topServicesSorted,
   activityBreakdown,
   formatInt,
   topN,
   safeNum,
 }: {
+  kpis?: Kpis;
   topServicesSorted: TopService[];
   activityBreakdown: ActivityBreakdown[];
   formatInt: (v: number) => string;
@@ -23,8 +25,34 @@ export default function EngagementSection({
       {/* Engagement */}
       <SectionTitle title="Engagement signals" subtitle="What users actually click and ask for." />
 
+      <Panel title="User Journey">
+        {!kpis ? (
+          <Empty />
+        ) : (
+          <div className="space-y-2">
+            <Row label="Results viewed" value={formatInt(kpis.results_viewed)} />
+            <Row label="Email submitted" value={formatInt(kpis.email_submitted)} />
+            <Row label="Email link clicked" value={formatInt(kpis.email_link_clicked)} />
+          </div>
+        )}
+      </Panel>
+
+      <Panel title="Conversion Insight">
+        {!kpis ? (
+          <Empty />
+        ) : (
+          <div className="space-y-2">
+            <Row label="Email submit rate" value={`${(safeNum(kpis.email_submit_rate) * 100).toFixed(1)}%`} />
+            <Row
+              label="Email click rate"
+              value={`${(safeNum(kpis.email_click_rate_from_submitted) * 100).toFixed(1)}%`}
+            />
+          </div>
+        )}
+      </Panel>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Panel title="Top clicked email services">
+        <Panel title="Service Interest">
           {topServicesSorted.length === 0 ? (
             <Empty />
           ) : (
@@ -36,7 +64,7 @@ export default function EngagementSection({
           )}
         </Panel>
 
-        <Panel title="Top activities (overall)">
+        <Panel title="Activity Interest">
           {activityBreakdown.length === 0 ? (
             <Empty />
           ) : (

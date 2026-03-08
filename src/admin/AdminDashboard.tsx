@@ -145,13 +145,14 @@ export default function AdminDashboard() {
         formatInt={formatInt}
       />
 
-      <EngagementSection
-        topServicesSorted={topServicesSorted}
-        activityBreakdown={activity_breakdown}
-        formatInt={formatInt}
-        topN={topN}
-        safeNum={safeNum}
-      />
+<EngagementSection
+  kpis={kpis}
+  topServicesSorted={topServicesSorted}
+  activityBreakdown={activity_breakdown}
+  formatInt={formatInt}
+  topN={topN}
+  safeNum={safeNum}
+/>
     </div>
   );
 }
