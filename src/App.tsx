@@ -50,9 +50,12 @@ function reducer(state: any, action: any) {
 
 export default function App() {
   // 🔐 Admin short-circuit
-if (typeof window !== "undefined" && window.location.pathname === "/admin") {
-  return <AdminPage />;
-}
+  if (typeof window !== "undefined") {
+    const path = window.location.pathname.replace(/\/+$/, "");
+    if (path === "/admin") {
+      return <AdminPage />;
+    }
+  }
 
   const [step, setStep] = useState(1);
   const [formState, dispatch] = useReducer(reducer, initialState);
