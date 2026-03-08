@@ -1,5 +1,17 @@
 import { createClient } from "@supabase/supabase-js";
 
+import activitiesCatalogue from "../src/data/activities.json";
+
+const ACTIVITY_NAME_BY_ID: Record<string, string> = (activitiesCatalogue as any[]).reduce(
+  (acc, row) => {
+    const id = String((row as any)?.activity_id ?? "");
+    const name = String((row as any)?.activity_name ?? "");
+    if (id) acc[id] = name || id;
+    return acc;
+  },
+  {} as Record<string, string>
+);
+
 /**
  * Temporary admin guard.
  * Can later be replaced with Supabase Auth.
@@ -128,6 +140,15 @@ else {
       return res.status(500).json({ error: "Failed to load activity breakdown" });
     }
 
+    const activityBreakdownEnriched = (activityBreakdown ?? []).map((r: any) => {
+      const activity_id = String(r?.activity_id ?? "");
+      return {
+        ...r,
+        activity_id,
+        activity_name: ACTIVITY_NAME_BY_ID[activity_id] ?? activity_id,
+      };
+    });
+
     // -------------------------------
     // 5️⃣ Region Demand
     // -------------------------------
@@ -198,7 +219,7 @@ return res.status(200).json({
   kpis: kpis ?? {},
   top_services: topServices ?? [],
   detailed_location: detailedLocation ?? [],
-  activity_breakdown: activityBreakdown ?? [],
+  activity_breakdown: activityBreakdownEnriched,
   region_demand: regionDemand ?? [],
   sector_demand: sectorDemand ?? [],
   sector_scope_demand: sectorScopeDemand ?? [],
