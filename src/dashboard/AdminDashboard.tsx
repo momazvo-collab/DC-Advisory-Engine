@@ -513,7 +513,7 @@ const totalSubmissions =
     </div>
 
     <h1 className="text-2xl lg:text-3xl font-semibold text-[#003B5C] mt-1">
-      Executive Intelligence Dashboard
+      OLD DASHBOARD
     </h1>
 
     <div className="text-sm text-gray-500 mt-2">
