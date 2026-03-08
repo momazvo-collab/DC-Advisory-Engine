@@ -86,7 +86,7 @@ export default function AdminDashboard() {
         <div>
           <div className="text-xs uppercase tracking-wider text-gray-500">Dubai Chambers • Advisory Engine</div>
 
-          <h1 className="text-2xl lg:text-3xl font-semibold text-[#003B5C] mt-1">Executive Intelligence Dashboard</h1>
+          <h1 className="text-2xl lg:text-3xl font-semibold text-[#003B5C] mt-1">NEW Intelligence Dashboard</h1>
 
           <div className="text-sm text-gray-500 mt-2">
             Demand signals across Dubai, other UAE emirates, and international markets.
