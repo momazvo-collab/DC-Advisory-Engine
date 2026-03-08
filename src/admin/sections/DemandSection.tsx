@@ -1,10 +1,6 @@
 import React from "react";
 
-import { Panel } from "../../dashboard/components/Panel";
-import { BarRow } from "../../dashboard/components/BarRow";
 import { Row } from "../../dashboard/components/Row";
-import { SectionTitle } from "../../dashboard/components/SectionTitle";
-import UAEEmiratesMap from "../../dashboard/visualizations/UAEEmiratesMap";
 
 import { safeNum, topN } from "../../dashboard/utils/formatters";
 
@@ -50,37 +46,43 @@ export default function DemandSection({
 
   return (
     <>
-      <SectionTitle title="Demand Intelligence" />
+      <SectionHeader>DEMAND INTELLIGENCE</SectionHeader>
 
-      <SectionTitle title="Jurisdiction Overview" />
+      <SectionHeader>JURISDICTION OVERVIEW</SectionHeader>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Panel title="Dubai">
-          <Row label="Local" value={formatInt(baseMatrix.Dubai?.Local || 0)} />
-          <Row label="International" value={formatInt(baseMatrix.Dubai?.International || 0)} />
-          <Row label="Total" value={formatInt(baseMatrix.Dubai?.Total || 0)} />
-        </Panel>
+        <Card title="Dubai">
+          <div className="space-y-2">
+            <Row label="Local" value={formatInt(baseMatrix.Dubai?.Local || 0)} />
+            <Row label="International" value={formatInt(baseMatrix.Dubai?.International || 0)} />
+            <Row label="Total" value={formatInt(baseMatrix.Dubai?.Total || 0)} />
+          </div>
+        </Card>
 
-        <Panel title="Other Emirates">
-          <Row label="Local" value={formatInt(baseMatrix.UAE?.Local || 0)} />
-          <Row label="International" value={formatInt(baseMatrix.UAE?.International || 0)} />
-          <Row label="Total" value={formatInt(baseMatrix.UAE?.Total || 0)} />
-        </Panel>
+        <Card title="Other Emirates">
+          <div className="space-y-2">
+            <Row label="Local" value={formatInt(baseMatrix.UAE?.Local || 0)} />
+            <Row label="International" value={formatInt(baseMatrix.UAE?.International || 0)} />
+            <Row label="Total" value={formatInt(baseMatrix.UAE?.Total || 0)} />
+          </div>
+        </Card>
 
-        <Panel title="International">
-          <Row label="Local" value={formatInt(baseMatrix.International?.Local || 0)} />
-          <Row label="International" value={formatInt(baseMatrix.International?.International || 0)} />
-          <Row label="Total" value={formatInt(baseMatrix.International?.Total || 0)} />
-        </Panel>
+        <Card title="International">
+          <div className="space-y-2">
+            <Row label="Local" value={formatInt(baseMatrix.International?.Local || 0)} />
+            <Row label="International" value={formatInt(baseMatrix.International?.International || 0)} />
+            <Row label="Total" value={formatInt(baseMatrix.International?.Total || 0)} />
+          </div>
+        </Card>
       </div>
 
-      <SectionTitle title="Geographic Demand" />
+      <SectionHeader>GEOGRAPHIC DEMAND</SectionHeader>
 
-      <Panel title="UAE emirates">
+      <Card title="UAE emirates">
         {uaeEmiratesRows.length === 0 ? (
           <Empty />
         ) : (
-          <div className="space-y-2">
+          <div className="divide-y divide-gray-100">
             {uaeEmiratesRows.map((r) => (
               <TableRow4
                 key={r.emirate}
@@ -95,17 +97,17 @@ export default function DemandSection({
             ) : null}
           </div>
         )}
-      </Panel>
+      </Card>
 
-      <Panel title="UAE emirate demand intensity">
-        <UAEEmiratesMap data={uaeHeatmapData} />
-      </Panel>
+      <Card title="UAE emirate demand intensity">
+        <EmiratesHeatmap data={uaeHeatmapData} formatInt={formatInt} />
+      </Card>
 
-      <Panel title="International countries">
+      <Card title="International countries">
         {countriesRows.length === 0 ? (
           <Empty />
         ) : (
-          <div className="space-y-2">
+          <div className="divide-y divide-gray-100">
             {countriesRows.map((r) => (
               <TableRow4
                 key={r.country}
@@ -120,25 +122,32 @@ export default function DemandSection({
             ) : null}
           </div>
         )}
-      </Panel>
+      </Card>
 
-      <SectionTitle title="Sector Demand" />
+      <SectionHeader>SECTOR DEMAND</SectionHeader>
 
-      <Panel title="Top sectors">
+      <Card title="Top sectors">
         {topSectorRows.length === 0 ? (
           <Empty />
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-4">
             {topSectorRows.map((s, i) => (
-              <BarRow key={i} label={s.sector} value={s.count} max={sectorMax} />
+              <SectorBarRow
+                key={`${s.sector}-${i}`}
+                label={s.sector}
+                value={safeNum(s.count)}
+                max={sectorMax}
+                colorClass={sectorBarColor(i)}
+                formatInt={formatInt}
+              />
             ))}
           </div>
         )}
-      </Panel>
+      </Card>
 
-      <SectionTitle title="Activity Demand" />
+      <SectionHeader>ACTIVITY DEMAND</SectionHeader>
 
-      <Panel title="Top activities">
+      <Card title="Top activities">
         {topActivityRows.length === 0 ? (
           <Empty />
         ) : (
@@ -148,8 +157,99 @@ export default function DemandSection({
             ))}
           </div>
         )}
-      </Panel>
+      </Card>
     </>
+  );
+}
+
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return <div className="text-xs uppercase tracking-wider text-gray-500 mb-4">{children}</div>;
+}
+
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-[#E6ECF2] bg-white shadow-sm p-6">
+      <div className="text-sm font-semibold text-[#003B5C] mb-4">{title}</div>
+      <div className="space-y-4">{children}</div>
+    </div>
+  );
+}
+
+function sectorBarColor(index: number) {
+  if (index === 0) return "bg-[#003B5C]";
+  if (index === 1) return "bg-[#5A8CA8]";
+  if (index === 2) return "bg-[#7CA8C0]";
+  return "bg-[#9CC2D6]";
+}
+
+function SectorBarRow({
+  label,
+  value,
+  max,
+  colorClass,
+  formatInt,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  colorClass: string;
+  formatInt: (v: number) => string;
+}) {
+  const pct = Math.max(0, Math.min(1, value / (max || 1)));
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-4 text-sm">
+        <div className="min-w-0 truncate text-gray-700">{label}</div>
+        <div className="text-right font-semibold text-gray-900 tabular-nums">{formatInt(value)}</div>
+      </div>
+      <div className="mt-2 h-2 rounded-full bg-gray-100 overflow-hidden">
+        <div className={`h-2 rounded-full ${colorClass}`} style={{ width: `${pct * 100}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function EmiratesHeatmap({
+  data,
+  formatInt,
+}: {
+  data: { emirate: string; Total: number }[];
+  formatInt: (v: number) => string;
+}) {
+  const valueByEmirate: Record<string, number> = {};
+  data.forEach((d) => {
+    valueByEmirate[d.emirate] = safeNum(d.Total);
+  });
+
+  const emirates = [
+    "Dubai",
+    "Abu Dhabi",
+    "Sharjah",
+    "Ajman",
+    "Ras Al Khaimah",
+    "Fujairah",
+    "Umm Al Quwain",
+  ];
+
+  function bucketClass(v: number) {
+    if (!v) return "bg-gray-100 text-gray-700";
+    if (v === 1) return "bg-[#DCEAF3] text-gray-900";
+    if (v === 2) return "bg-[#7CA8C0] text-white";
+    return "bg-[#003B5C] text-white";
+  }
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      {emirates.map((emirate) => {
+        const v = valueByEmirate[emirate] || 0;
+        return (
+          <div key={emirate} className={`rounded-xl p-4 ${bucketClass(v)}`}>
+            <div className="text-sm font-semibold">{emirate}</div>
+            <div className="mt-1 text-xs opacity-90">{formatInt(v)} signals</div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -159,11 +259,11 @@ function Empty() {
 
 function TableRow4({ a, b, c, d }: { a: string; b: string; c: string; d: string }) {
   return (
-    <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 items-center border-b py-2 text-sm">
+    <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 items-center py-2 text-sm hover:bg-gray-50">
       <div className="min-w-0 truncate text-gray-700">{a}</div>
-      <div className="text-right font-semibold text-gray-900 w-16">{b}</div>
-      <div className="text-right font-semibold text-gray-900 w-16">{c}</div>
-      <div className="text-right font-semibold text-gray-900 w-16">{d}</div>
+      <div className="text-right font-semibold text-gray-900 w-16 tabular-nums">{b}</div>
+      <div className="text-right font-semibold text-gray-900 w-16 tabular-nums">{c}</div>
+      <div className="text-right font-semibold text-gray-900 w-16 tabular-nums">{d}</div>
     </div>
   );
 }

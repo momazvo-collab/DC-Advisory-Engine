@@ -1,8 +1,5 @@
 import React from "react";
 
-import { Panel } from "../../dashboard/components/Panel";
-import { SectionTitle } from "../../dashboard/components/SectionTitle";
-
 import type { ActivityBreakdown, Kpis, TopService } from "../intelligence/demandAggregations";
 
 export default function EngagementSection({
@@ -22,81 +19,83 @@ export default function EngagementSection({
 }) {
   return (
     <>
-      {/* Engagement */}
-      <SectionTitle title="Engagement signals" subtitle="What users actually click and ask for." />
+      <SectionHeader>USER JOURNEY</SectionHeader>
 
-      <Panel title="User Journey">
+      <Card title="Funnel">
         {!kpis ? (
           <Empty />
         ) : (
-          <div className="space-y-2">
-            <Row label="Results viewed" value={formatInt(kpis.results_viewed)} />
-            <Row label="Email submitted" value={formatInt(kpis.email_submitted)} />
-            <Row label="Email link clicked" value={formatInt(kpis.email_link_clicked)} />
+          <div className="divide-y divide-gray-100">
+            <FunnelRow label="Results viewed" value={formatInt(kpis.results_viewed)} />
+            <FunnelRow label="Email submitted" value={formatInt(kpis.email_submitted)} />
+            <FunnelRow label="Email link clicked" value={formatInt(kpis.email_link_clicked)} />
           </div>
         )}
-      </Panel>
+      </Card>
 
-      <Panel title="Conversion Insight">
+      <Card title="Conversion">
         {!kpis ? (
           <Empty />
         ) : (
-          <div className="space-y-2">
-            <Row label="Email submit rate" value={`${(safeNum(kpis.email_submit_rate) * 100).toFixed(1)}%`} />
-            <Row
+          <div className="divide-y divide-gray-100">
+            <FunnelRow label="Email submit rate" value={`${(safeNum(kpis.email_submit_rate) * 100).toFixed(1)}%`} />
+            <FunnelRow
               label="Email click rate"
               value={`${(safeNum(kpis.email_click_rate_from_submitted) * 100).toFixed(1)}%`}
             />
           </div>
         )}
-      </Panel>
+      </Card>
+
+      <SectionHeader>SERVICE INTEREST</SectionHeader>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Panel title="Service Interest">
+        <Card title="Top clicked services">
           {topServicesSorted.length === 0 ? (
             <Empty />
           ) : (
-            <div className="space-y-2">
+            <div className="divide-y divide-gray-100">
               {topServicesSorted.map((s) => (
-                <Row key={s.service_id} label={s.service_id} value={formatInt(s.click_count)} />
+                <FunnelRow key={s.service_id} label={s.service_id} value={formatInt(s.click_count)} />
               ))}
             </div>
           )}
-        </Panel>
+        </Card>
 
-        <Panel title="Activity Interest">
+        <Card title="Top requested activities">
           {activityBreakdown.length === 0 ? (
             <Empty />
           ) : (
-            <div className="space-y-2">
+            <div className="divide-y divide-gray-100">
               {topN(activityBreakdown, 10, (a) => safeNum(a.count)).map((a) => (
-                <Row key={a.activity_id} label={a.activity_name} value={formatInt(a.count)} />
+                <FunnelRow key={a.activity_id} label={a.activity_name} value={formatInt(a.count)} />
               ))}
             </div>
           )}
-        </Panel>
-      </div>
-
-      {/* Data note */}
-      <div className="rounded-2xl border bg-white p-6 shadow-sm">
-        <div className="text-sm font-semibold text-[#003B5C]">Data note</div>
-        <div className="mt-2 text-sm text-gray-600 leading-relaxed">
-          Region → Sector is supported by <span className="font-semibold">region_sector_demand</span>.
-          Activities are expandable per sector using <span className="font-semibold">activity_breakdown</span>, which is currently{" "}
-          <span className="font-semibold">not keyed by region/emirate/country</span>. When you add an RPC that returns
-          <span className="font-semibold"> region + sector + activity_id</span> (and optionally location_base), the activity drill-down
-          will become region-accurate with no UI redesign.
-        </div>
+        </Card>
       </div>
     </>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return <div className="text-xs uppercase tracking-wider text-gray-500 mb-4">{children}</div>;
+}
+
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="flex justify-between py-2 border-b text-sm">
-      <span className="pr-6 text-gray-700">{label}</span>
-      <span className="font-semibold text-gray-900">{value}</span>
+    <div className="rounded-xl border border-[#E6ECF2] bg-white shadow-sm p-6">
+      <div className="text-sm font-semibold text-[#003B5C] mb-4">{title}</div>
+      <div className="space-y-4">{children}</div>
+    </div>
+  );
+}
+
+function FunnelRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-6 py-2 text-sm hover:bg-gray-50">
+      <div className="min-w-0 truncate text-gray-700">{label}</div>
+      <div className="text-right font-semibold text-gray-900 tabular-nums">{value}</div>
     </div>
   );
 }

@@ -80,79 +80,83 @@ export default function AdminDashboard() {
   const topServicesSorted = [...top_services].sort((a, b) => b.click_count - a.click_count).slice(0, 10);
 
   return (
-    <div className="p-8 lg:p-10 space-y-12 bg-[#F7F9FC] min-h-screen">
-      {/* Header */}
-      <div className="flex items-end justify-between gap-6">
-        <div>
-          <div className="text-xs uppercase tracking-wider text-gray-500">Dubai Chambers • Advisory Engine</div>
+    <div className="min-h-screen bg-[#F6F8FB]">
+      <div className="max-w-7xl mx-auto p-8 lg:p-10 space-y-12">
+        {/* Header */}
+        <div className="flex items-end justify-between gap-6">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-gray-500">Dubai Chambers • Advisory Engine</div>
 
-          <h1 className="text-2xl lg:text-3xl font-semibold text-[#003B5C] mt-1">NEW Intelligence Dashboard</h1>
+            <h1 className="text-2xl lg:text-3xl font-semibold text-[#003B5C] mt-1">Intelligence Dashboard</h1>
+          </div>
 
-          <div className="text-sm text-gray-500 mt-2">
-            Demand signals across Dubai, other UAE emirates, and international markets.
+          {/* Time Range */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setRange("7d")}
+              className={`px-3 py-1 text-sm rounded-lg border border-[#E6ECF2] ${
+                range === "7d" ? "bg-[#003B5C] text-white" : "bg-white text-gray-700"
+              }`}
+            >
+              7D
+            </button>
+
+            <button
+              onClick={() => setRange("30d")}
+              className={`px-3 py-1 text-sm rounded-lg border border-[#E6ECF2] ${
+                range === "30d" ? "bg-[#003B5C] text-white" : "bg-white text-gray-700"
+              }`}
+            >
+              30D
+            </button>
+
+            <button
+              onClick={() => setRange("all")}
+              className={`px-3 py-1 text-sm rounded-lg border border-[#E6ECF2] ${
+                range === "all" ? "bg-[#003B5C] text-white" : "bg-white text-gray-700"
+              }`}
+            >
+              ALL
+            </button>
           </div>
         </div>
 
-        {/* Time Range */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => setRange("7d")}
-            className={`px-3 py-1 text-sm rounded-lg border ${range === "7d" ? "bg-[#003B5C] text-white" : "bg-white"}`}
-          >
-            7D
-          </button>
+        <OverviewSection
+          kpis={kpis}
+          baseMatrix={baseMatrix}
+          signals={signals}
+          totalSubmissions={totalSubmissions}
+          formatInt={formatInt}
+          formatPct={formatPct}
+        />
 
-          <button
-            onClick={() => setRange("30d")}
-            className={`px-3 py-1 text-sm rounded-lg border ${range === "30d" ? "bg-[#003B5C] text-white" : "bg-white"}`}
-          >
-            30D
-          </button>
+        <DemandSection
+          baseMatrix={baseMatrix}
+          detailedLocation={detailed_location}
+          sectorDemand={sector_demand}
+          activityBreakdown={activity_breakdown}
+          uaeEmiratesRows={uaeEmiratesRows}
+          uaeEmirates={uaeEmirates}
+          showAllUaeEmirates={showAllUaeEmirates}
+          setShowAllUaeEmirates={setShowAllUaeEmirates}
+          uaeHeatmapData={uaeHeatmapData}
+          countriesRows={countriesRows}
+          countries={countries}
+          showAllCountries={showAllCountries}
+          setShowAllCountries={setShowAllCountries}
+          heatmapData={heatmapData}
+          formatInt={formatInt}
+        />
 
-          <button
-            onClick={() => setRange("all")}
-            className={`px-3 py-1 text-sm rounded-lg border ${range === "all" ? "bg-[#003B5C] text-white" : "bg-white"}`}
-          >
-            ALL
-          </button>
-        </div>
+        <EngagementSection
+          kpis={kpis}
+          topServicesSorted={topServicesSorted}
+          activityBreakdown={activity_breakdown}
+          formatInt={formatInt}
+          topN={topN}
+          safeNum={safeNum}
+        />
       </div>
-
-      <OverviewSection
-        kpis={kpis}
-        baseMatrix={baseMatrix}
-        signals={signals}
-        totalSubmissions={totalSubmissions}
-        formatInt={formatInt}
-        formatPct={formatPct}
-      />
-
-      <DemandSection
-        baseMatrix={baseMatrix}
-        detailedLocation={detailed_location}
-        sectorDemand={sector_demand}
-        activityBreakdown={activity_breakdown}
-        uaeEmiratesRows={uaeEmiratesRows}
-        uaeEmirates={uaeEmirates}
-        showAllUaeEmirates={showAllUaeEmirates}
-        setShowAllUaeEmirates={setShowAllUaeEmirates}
-        uaeHeatmapData={uaeHeatmapData}
-        countriesRows={countriesRows}
-        countries={countries}
-        showAllCountries={showAllCountries}
-        setShowAllCountries={setShowAllCountries}
-        heatmapData={heatmapData}
-        formatInt={formatInt}
-      />
-
-<EngagementSection
-  kpis={kpis}
-  topServicesSorted={topServicesSorted}
-  activityBreakdown={activity_breakdown}
-  formatInt={formatInt}
-  topN={topN}
-  safeNum={safeNum}
-/>
     </div>
   );
 }
