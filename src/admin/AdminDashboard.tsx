@@ -128,6 +128,10 @@ export default function AdminDashboard() {
       />
 
       <DemandSection
+        baseMatrix={baseMatrix}
+        detailedLocation={detailed_location}
+        sectorDemand={sector_demand}
+        activityBreakdown={activity_breakdown}
         uaeEmiratesRows={uaeEmiratesRows}
         uaeEmirates={uaeEmirates}
         showAllUaeEmirates={showAllUaeEmirates}

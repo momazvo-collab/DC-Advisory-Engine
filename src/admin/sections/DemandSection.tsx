@@ -1,11 +1,21 @@
 import React from "react";
 
 import { Panel } from "../../dashboard/components/Panel";
+import { BarRow } from "../../dashboard/components/BarRow";
+import { Row } from "../../dashboard/components/Row";
 import { SectionTitle } from "../../dashboard/components/SectionTitle";
 import RegionSectorHeatmap from "../../dashboard/visualizations/RegionSectorHeatmap";
 import UAEEmiratesMap from "../../dashboard/visualizations/UAEEmiratesMap";
 
+import { normalizeKey, safeNum, topN } from "../../dashboard/utils/formatters";
+
+import type { ActivityBreakdown, DetailedLocation, SectorDemand } from "../intelligence/demandAggregations";
+
 export default function DemandSection({
+  baseMatrix,
+  detailedLocation,
+  sectorDemand,
+  activityBreakdown,
   uaeEmiratesRows,
   uaeEmirates,
   showAllUaeEmirates,
@@ -18,6 +28,10 @@ export default function DemandSection({
   heatmapData,
   formatInt,
 }: {
+  baseMatrix: Record<string, { Local: number; International: number; Total: number }>;
+  detailedLocation: DetailedLocation[];
+  sectorDemand: SectorDemand[];
+  activityBreakdown: ActivityBreakdown[];
   uaeEmiratesRows: { emirate: string; Local: number; International: number; Total: number }[];
   uaeEmirates: { emirate: string; Local: number; International: number; Total: number }[];
   showAllUaeEmirates: boolean;
@@ -30,49 +44,92 @@ export default function DemandSection({
   heatmapData: { region: string; sector: string; count: number }[];
   formatInt: (v: number) => string;
 }) {
+  const dubaiOutboundRegions = (() => {
+    const m = new Map<string, number>();
+    for (const r of detailedLocation || []) {
+      if (normalizeKey(r.location_base) !== "Dubai") continue;
+      if (normalizeKey(r.scope) !== "International") continue;
+
+      const region = normalizeKey(r.region);
+      m.set(region, (m.get(region) || 0) + safeNum(r.count));
+    }
+
+    return [...m.entries()]
+      .map(([region, count]) => ({ region, count }))
+      .sort((a, b) => b.count - a.count);
+  })();
+
+  const topSectorRows = topN(sectorDemand || [], 10, (s) => safeNum(s.count));
+  const sectorMax = safeNum(topSectorRows[0]?.count) || 1;
+
+  const topActivityRows = topN(activityBreakdown || [], 10, (a) => safeNum(a.count));
+
   return (
     <>
-      {/* UAE Conversion Intelligence */}
-      <SectionTitle
-        title="Other Emirates Demand"
-        subtitle="Other emirates showing demand — a pipeline for Dubai Chambers membership conversion."
-      />
+      <SectionTitle title="Demand Intelligence" subtitle="Jurisdiction → Geography → Sector → Activity" />
 
-      <Panel title="Demand by UAE emirate">
-        {uaeEmiratesRows.length === 0 ? (
-          <Empty />
-        ) : (
-          <div className="space-y-2">
-            {uaeEmiratesRows.map((r) => (
-              <TableRow4
-                key={r.emirate}
-                a={r.emirate}
-                b={formatInt(r.Local)}
-                c={formatInt(r.International)}
-                d={formatInt(r.Total)}
-              />
-            ))}
-            {uaeEmirates.length > 6 ? (
-              <Toggle expanded={showAllUaeEmirates} onClick={() => setShowAllUaeEmirates((v) => !v)} />
-            ) : null}
-          </div>
-        )}
-      </Panel>
+      <SectionTitle title="Jurisdiction Overview" subtitle="Local vs International scope demand within each jurisdiction." />
 
-      <SectionTitle
-        title="UAE emirate demand heatmap"
-        subtitle="Demand signals across UAE emirates outside Dubai."
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Panel title="Dubai">
+          <Row label="Local" value={formatInt(baseMatrix.Dubai?.Local || 0)} />
+          <Row label="International" value={formatInt(baseMatrix.Dubai?.International || 0)} />
+          <Row label="Total" value={formatInt(baseMatrix.Dubai?.Total || 0)} />
+        </Panel>
+
+        <Panel title="Other Emirates">
+          <Row label="Local" value={formatInt(baseMatrix.UAE?.Local || 0)} />
+          <Row label="International" value={formatInt(baseMatrix.UAE?.International || 0)} />
+          <Row label="Total" value={formatInt(baseMatrix.UAE?.Total || 0)} />
+        </Panel>
+
+        <Panel title="International">
+          <Row label="Local" value={formatInt(baseMatrix.International?.Local || 0)} />
+          <Row label="International" value={formatInt(baseMatrix.International?.International || 0)} />
+          <Row label="Total" value={formatInt(baseMatrix.International?.Total || 0)} />
+        </Panel>
+      </div>
+
+      <SectionTitle title="Geographic Demand" subtitle="Geographic distribution of demand signals by jurisdiction." />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Panel title="Dubai outbound expansion regions">
+          {dubaiOutboundRegions.length === 0 ? (
+            <Empty />
+          ) : (
+            <div className="space-y-2">
+              {dubaiOutboundRegions.slice(0, 10).map((r, i) => (
+                <BarRow key={i} label={r.region} value={r.count} max={dubaiOutboundRegions[0]?.count || 1} />
+              ))}
+            </div>
+          )}
+        </Panel>
+
+        <Panel title="Demand by UAE emirate">
+          {uaeEmiratesRows.length === 0 ? (
+            <Empty />
+          ) : (
+            <div className="space-y-2">
+              {uaeEmiratesRows.map((r) => (
+                <TableRow4
+                  key={r.emirate}
+                  a={r.emirate}
+                  b={formatInt(r.Local)}
+                  c={formatInt(r.International)}
+                  d={formatInt(r.Total)}
+                />
+              ))}
+              {uaeEmirates.length > 6 ? (
+                <Toggle expanded={showAllUaeEmirates} onClick={() => setShowAllUaeEmirates((v) => !v)} />
+              ) : null}
+            </div>
+          )}
+        </Panel>
+      </div>
 
       <Panel title="UAE emirate demand intensity">
         <UAEEmiratesMap data={uaeHeatmapData} />
       </Panel>
-
-      {/* International Inbound Intelligence */}
-      <SectionTitle
-        title="International Demand"
-        subtitle="Foreign businesses requesting advisory support related to Dubai."
-      />
 
       <Panel title="International Demand by country">
         {countriesRows.length === 0 ? (
@@ -91,6 +148,34 @@ export default function DemandSection({
             {countries.length > 6 ? (
               <Toggle expanded={showAllCountries} onClick={() => setShowAllCountries((v) => !v)} />
             ) : null}
+          </div>
+        )}
+      </Panel>
+
+      <SectionTitle title="Sector Demand" subtitle="Top sectors globally." />
+
+      <Panel title="Top sectors">
+        {topSectorRows.length === 0 ? (
+          <Empty />
+        ) : (
+          <div className="space-y-2">
+            {topSectorRows.map((s, i) => (
+              <BarRow key={i} label={s.sector} value={s.count} max={sectorMax} />
+            ))}
+          </div>
+        )}
+      </Panel>
+
+      <SectionTitle title="Activity Demand" subtitle="Top activities globally." />
+
+      <Panel title="Top activities">
+        {topActivityRows.length === 0 ? (
+          <Empty />
+        ) : (
+          <div className="space-y-2">
+            {topActivityRows.map((a) => (
+              <Row key={a.activity_id} label={a.activity_name} value={formatInt(a.count)} />
+            ))}
           </div>
         )}
       </Panel>
