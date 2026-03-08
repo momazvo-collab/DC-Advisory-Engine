@@ -1,6 +1,16 @@
 import { createClient } from "@supabase/supabase-js";
 
-import activitiesCatalogue from "../src/data/activities.json";
+import fs from "fs";
+import path from "path";
+
+let activitiesCatalogue: any[] = [];
+
+try {
+  const activitiesPath = path.join(process.cwd(), "src/data/activities.json");
+  activitiesCatalogue = JSON.parse(fs.readFileSync(activitiesPath, "utf-8"));
+} catch (e) {
+  console.warn("Failed to load activities catalogue:", e);
+}
 
 const ACTIVITY_NAME_BY_ID: Record<string, string> = (activitiesCatalogue as any[]).reduce(
   (acc, row) => {
