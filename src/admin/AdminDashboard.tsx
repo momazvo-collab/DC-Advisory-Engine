@@ -9,8 +9,6 @@ import EngagementSection from "./sections/EngagementSection";
 import {
   buildExecutiveSignals,
   computeBaseScopeMatrix,
-  computeInternationalCountriesTable,
-  computeUaeEmiratesTable,
   type AnalyticsResponse,
 } from "./intelligence/demandAggregations";
 
@@ -19,9 +17,6 @@ export default function AdminDashboard() {
   const [data, setData] = React.useState<AnalyticsResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-
-  const [showAllUaeEmirates, setShowAllUaeEmirates] = React.useState(false);
-  const [showAllCountries, setShowAllCountries] = React.useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,28 +49,139 @@ export default function AdminDashboard() {
   if (error) return <div className="p-10 text-red-600">{error}</div>;
   if (!data) return null;
 
-  const { kpis, top_services, detailed_location, activity_breakdown, region_demand, sector_demand, region_sector_demand = [] } =
-    data;
+  const { kpis, top_services, detailed_location, activity_breakdown, sector_demand } = data;
 
   const signals = buildExecutiveSignals(data);
 
   const baseMatrix = computeBaseScopeMatrix(detailed_location);
 
-  const uaeEmirates = computeUaeEmiratesTable(detailed_location);
-  const uaeEmiratesRows = showAllUaeEmirates ? uaeEmirates : uaeEmirates.slice(0, 6);
-  const uaeHeatmapData = uaeEmirates.map((e) => ({ emirate: e.emirate, Total: e.Total }));
+  const overallTotals = {
+    total: (baseMatrix.Dubai?.Total || 0) + (baseMatrix.UAE?.Total || 0) + (baseMatrix.International?.Total || 0),
+    local:
+      (baseMatrix.Dubai?.Local || 0) + (baseMatrix.UAE?.Local || 0) + (baseMatrix.International?.Local || 0),
+    international:
+      (baseMatrix.Dubai?.International || 0) +
+      (baseMatrix.UAE?.International || 0) +
+      (baseMatrix.International?.International || 0),
+  };
 
-  const countries = computeInternationalCountriesTable(detailed_location);
-  const countriesRows = showAllCountries ? countries : countries.slice(0, 6);
+  const jurisdictionTotals = {
+    Dubai: {
+      total: baseMatrix.Dubai?.Total || 0,
+      local: baseMatrix.Dubai?.Local || 0,
+      international: baseMatrix.Dubai?.International || 0,
+    },
+    OtherEmirates: {
+      total: baseMatrix.UAE?.Total || 0,
+      local: baseMatrix.UAE?.Local || 0,
+      international: baseMatrix.UAE?.International || 0,
+    },
+    International: {
+      total: baseMatrix.International?.Total || 0,
+      local: baseMatrix.International?.Local || 0,
+      international: baseMatrix.International?.International || 0,
+    },
+  };
 
-  const heatmapData = region_sector_demand.map((r) => ({
-    region: r.region,
-    sector: r.sector,
-    count: r.count,
-  }));
+  const topOverallSector = sector_demand?.length
+    ? sector_demand.reduce(
+        (best, row) => (safeNum(row.count) > safeNum(best.count) ? row : best),
+        sector_demand[0]
+      )
+    : null;
 
-  const totalSubmissions =
-    (baseMatrix.Dubai?.Total || 0) + (baseMatrix.UAE?.Total || 0) + (baseMatrix.International?.Total || 0);
+  const topOverallActivity = activity_breakdown?.length
+    ? activity_breakdown.reduce(
+        (best, row) => (safeNum(row.count) > safeNum(best.count) ? row : best),
+        activity_breakdown[0]
+      )
+    : null;
+
+  const overallTopSectors = topN(sector_demand || [], 10, (s) => safeNum(s.count));
+  const overallTopActivities = topN(activity_breakdown || [], 10, (a) => safeNum(a.count));
+
+  const countrySet = new Set<string>();
+  const emirateTotalsByScope: Record<string, { total: number; local: number; international: number }> = {
+    All: { total: 0, local: 0, international: 0 },
+  };
+  const countryTotalsByScope: Record<string, { total: number; local: number; international: number }> = {
+    "All Countries": { total: 0, local: 0, international: 0 },
+  };
+  const regionTotalsInternational: Record<string, number> = {};
+
+  const normalize = (v: any) => {
+    const s = String(v ?? "").trim();
+    return s.length ? s : "Unknown";
+  };
+
+  const normalizeEmirate = (v: any) => {
+    const raw = normalize(v);
+    const key = raw.toLowerCase();
+    if (key === "rak" || key === "ras al khaimah" || key === "ras al-khaimah") return "Ras Al Khaimah";
+    if (key === "uaq" || key === "umm al quwain" || key === "umm al-quwain") return "Umm Al Quwain";
+    if (key === "abudhabi" || key === "abu-dhabi" || key === "abu dhabi") return "Abu Dhabi";
+    return raw;
+  };
+
+  for (const r of detailed_location || []) {
+    const locationBase = normalize(r.location_base);
+    const scope = normalize(r.scope);
+    const count = safeNum(r.count);
+
+    if (locationBase === "International") {
+      const country = normalize(r.country);
+      if (country !== "Unknown") countrySet.add(country);
+
+      const bucketKey = country === "Unknown" ? "Unknown" : country;
+      if (!countryTotalsByScope[bucketKey]) {
+        countryTotalsByScope[bucketKey] = { total: 0, local: 0, international: 0 };
+      }
+      countryTotalsByScope[bucketKey].total += count;
+      countryTotalsByScope["All Countries"].total += count;
+      if (scope === "Local") {
+        countryTotalsByScope[bucketKey].local += count;
+        countryTotalsByScope["All Countries"].local += count;
+      }
+      if (scope === "International") {
+        countryTotalsByScope[bucketKey].international += count;
+        countryTotalsByScope["All Countries"].international += count;
+
+        const region = normalize(r.region);
+        if (region !== "Unknown") {
+          regionTotalsInternational[region] = (regionTotalsInternational[region] || 0) + count;
+        }
+      }
+    }
+
+    if (locationBase === "UAE") {
+      const emirate = normalizeEmirate(r.emirate);
+      const bucketKey = emirate === "Unknown" ? "Unknown" : emirate;
+      if (!emirateTotalsByScope[bucketKey]) {
+        emirateTotalsByScope[bucketKey] = { total: 0, local: 0, international: 0 };
+      }
+      emirateTotalsByScope[bucketKey].total += count;
+      emirateTotalsByScope.All.total += count;
+      if (scope === "Local") {
+        emirateTotalsByScope[bucketKey].local += count;
+        emirateTotalsByScope.All.local += count;
+      }
+      if (scope === "International") {
+        emirateTotalsByScope[bucketKey].international += count;
+        emirateTotalsByScope.All.international += count;
+      }
+    }
+  }
+
+  const countryOptions = [...countrySet].sort((a, b) => a.localeCompare(b));
+
+  const internationalTopRegionsAll = Object.entries(regionTotalsInternational)
+    .map(([region, count]) => ({ region, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  const topOverallRegion = internationalTopRegionsAll[0] || null;
+
+  const totalSubmissions = overallTotals.total;
 
   const topServicesSorted = [...top_services].sort((a, b) => b.click_count - a.click_count).slice(0, 10);
 
@@ -131,20 +237,17 @@ export default function AdminDashboard() {
         />
 
         <DemandSection
-          baseMatrix={baseMatrix}
-          detailedLocation={detailed_location}
-          sectorDemand={sector_demand}
-          activityBreakdown={activity_breakdown}
-          uaeEmiratesRows={uaeEmiratesRows}
-          uaeEmirates={uaeEmirates}
-          showAllUaeEmirates={showAllUaeEmirates}
-          setShowAllUaeEmirates={setShowAllUaeEmirates}
-          uaeHeatmapData={uaeHeatmapData}
-          countriesRows={countriesRows}
-          countries={countries}
-          showAllCountries={showAllCountries}
-          setShowAllCountries={setShowAllCountries}
-          heatmapData={heatmapData}
+          overallTotals={overallTotals}
+          topOverallSector={topOverallSector}
+          topOverallActivity={topOverallActivity}
+          topOverallRegion={topOverallRegion}
+          jurisdictionTotals={jurisdictionTotals}
+          countryOptions={countryOptions}
+          emirateTotalsByScope={emirateTotalsByScope}
+          countryTotalsByScope={countryTotalsByScope}
+          internationalTopRegionsAll={internationalTopRegionsAll}
+          overallTopSectors={overallTopSectors}
+          overallTopActivities={overallTopActivities}
           formatInt={formatInt}
         />
 

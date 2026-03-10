@@ -1,163 +1,66 @@
 import React from "react";
 
-import { Row } from "../../dashboard/components/Row";
+import type { ActivityBreakdown, SectorDemand } from "../intelligence/demandAggregations";
 
-import { safeNum, topN } from "../../dashboard/utils/formatters";
-
-import type { ActivityBreakdown, DetailedLocation, SectorDemand } from "../intelligence/demandAggregations";
+type JurisdictionKey = "Dubai" | "OtherEmirates" | "International";
 
 export default function DemandSection({
-  baseMatrix,
-  detailedLocation: _detailedLocation,
-  sectorDemand,
-  activityBreakdown,
-  uaeEmiratesRows,
-  uaeEmirates,
-  showAllUaeEmirates,
-  setShowAllUaeEmirates,
-  uaeHeatmapData,
-  countriesRows,
-  countries,
-  showAllCountries,
-  setShowAllCountries,
-  heatmapData: _heatmapData,
+  overallTotals,
+  topOverallSector,
+  topOverallActivity,
+  topOverallRegion,
+  jurisdictionTotals,
+  countryOptions,
+  emirateTotalsByScope,
+  countryTotalsByScope,
+  internationalTopRegionsAll,
+  overallTopSectors,
+  overallTopActivities,
   formatInt,
 }: {
-  baseMatrix: Record<string, { Local: number; International: number; Total: number }>;
-  detailedLocation: DetailedLocation[];
-  sectorDemand: SectorDemand[];
-  activityBreakdown: ActivityBreakdown[];
-  uaeEmiratesRows: { emirate: string; Local: number; International: number; Total: number }[];
-  uaeEmirates: { emirate: string; Local: number; International: number; Total: number }[];
-  showAllUaeEmirates: boolean;
-  setShowAllUaeEmirates: React.Dispatch<React.SetStateAction<boolean>>;
-  uaeHeatmapData: { emirate: string; Total: number }[];
-  countriesRows: { country: string; Local: number; International: number; Total: number }[];
-  countries: { country: string; Local: number; International: number; Total: number }[];
-  showAllCountries: boolean;
-  setShowAllCountries: React.Dispatch<React.SetStateAction<boolean>>;
-  heatmapData: { region: string; sector: string; count: number }[];
+  overallTotals: { total: number; local: number; international: number };
+  topOverallSector: SectorDemand | null;
+  topOverallActivity: ActivityBreakdown | null;
+  topOverallRegion: { region: string; count: number } | null;
+  jurisdictionTotals: {
+    Dubai: { total: number; local: number; international: number };
+    OtherEmirates: { total: number; local: number; international: number };
+    International: { total: number; local: number; international: number };
+  };
+  countryOptions: string[];
+  emirateTotalsByScope: Record<string, { total: number; local: number; international: number }>;
+  countryTotalsByScope: Record<string, { total: number; local: number; international: number }>;
+  internationalTopRegionsAll: { region: string; count: number }[];
+  overallTopSectors: SectorDemand[];
+  overallTopActivities: ActivityBreakdown[];
   formatInt: (v: number) => string;
 }) {
-  const topSectorRows = topN(sectorDemand || [], 10, (s) => safeNum(s.count));
-  const sectorMax = safeNum(topSectorRows[0]?.count) || 1;
-
-  const topActivityRows = topN(activityBreakdown || [], 10, (a) => safeNum(a.count));
-
   return (
     <>
       <SectionHeader>DEMAND INTELLIGENCE</SectionHeader>
 
-      <SectionHeader>JURISDICTION OVERVIEW</SectionHeader>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card title="Dubai">
-          <div className="space-y-2">
-            <Row label="Local" value={formatInt(baseMatrix.Dubai?.Local || 0)} />
-            <Row label="International" value={formatInt(baseMatrix.Dubai?.International || 0)} />
-            <Row label="Total" value={formatInt(baseMatrix.Dubai?.Total || 0)} />
-          </div>
-        </Card>
-
-        <Card title="Other Emirates">
-          <div className="space-y-2">
-            <Row label="Local" value={formatInt(baseMatrix.UAE?.Local || 0)} />
-            <Row label="International" value={formatInt(baseMatrix.UAE?.International || 0)} />
-            <Row label="Total" value={formatInt(baseMatrix.UAE?.Total || 0)} />
-          </div>
-        </Card>
-
-        <Card title="International">
-          <div className="space-y-2">
-            <Row label="Local" value={formatInt(baseMatrix.International?.Local || 0)} />
-            <Row label="International" value={formatInt(baseMatrix.International?.International || 0)} />
-            <Row label="Total" value={formatInt(baseMatrix.International?.Total || 0)} />
-          </div>
-        </Card>
-      </div>
-
-      <SectionHeader>GEOGRAPHIC DEMAND</SectionHeader>
-
-      <Card title="UAE emirates">
-        {uaeEmiratesRows.length === 0 ? (
-          <Empty />
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {uaeEmiratesRows.map((r) => (
-              <TableRow4
-                key={r.emirate}
-                a={r.emirate}
-                b={formatInt(r.Local)}
-                c={formatInt(r.International)}
-                d={formatInt(r.Total)}
-              />
-            ))}
-            {uaeEmirates.length > 6 ? (
-              <Toggle expanded={showAllUaeEmirates} onClick={() => setShowAllUaeEmirates((v) => !v)} />
-            ) : null}
-          </div>
-        )}
-      </Card>
-
-      <Card title="UAE emirate demand intensity">
-        <EmiratesHeatmap data={uaeHeatmapData} formatInt={formatInt} />
-      </Card>
-
-      <Card title="International countries">
-        {countriesRows.length === 0 ? (
-          <Empty />
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {countriesRows.map((r) => (
-              <TableRow4
-                key={r.country}
-                a={r.country}
-                b={formatInt(r.Local)}
-                c={formatInt(r.International)}
-                d={formatInt(r.Total)}
-              />
-            ))}
-            {countries.length > 6 ? (
-              <Toggle expanded={showAllCountries} onClick={() => setShowAllCountries((v) => !v)} />
-            ) : null}
-          </div>
-        )}
-      </Card>
-
-      <SectionHeader>SECTOR DEMAND</SectionHeader>
-
-      <Card title="Top sectors">
-        {topSectorRows.length === 0 ? (
-          <Empty />
-        ) : (
-          <div className="space-y-4">
-            {topSectorRows.map((s, i) => (
-              <SectorBarRow
-                key={`${s.sector}-${i}`}
-                label={s.sector}
-                value={safeNum(s.count)}
-                max={sectorMax}
-                colorClass={sectorBarColor(i)}
-                formatInt={formatInt}
-              />
-            ))}
-          </div>
-        )}
-      </Card>
-
-      <SectionHeader>ACTIVITY DEMAND</SectionHeader>
-
-      <Card title="Top activities">
-        {topActivityRows.length === 0 ? (
-          <Empty />
-        ) : (
-          <div className="space-y-2">
-            {topActivityRows.map((a) => (
-              <Row key={a.activity_id} label={a.activity_name} value={formatInt(a.count)} />
-            ))}
-          </div>
-        )}
-      </Card>
+      <DemandJurisdictionExplorer
+        overallTotals={overallTotals}
+        topOverallSector={topOverallSector}
+        topOverallActivity={topOverallActivity}
+        topOverallRegion={topOverallRegion}
+        jurisdictionTotals={jurisdictionTotals}
+        emirateTotalsByScope={emirateTotalsByScope}
+        countryTotalsByScope={countryTotalsByScope}
+        countryOptions={countryOptions}
+        internationalTopRegionsAll={internationalTopRegionsAll}
+        overallTopSectors={overallTopSectors}
+        overallTopActivities={overallTopActivities}
+        formatInt={formatInt}
+      >
+        <TotalApplicationsCard
+          overallTotals={overallTotals}
+          topOverallSector={topOverallSector}
+          topOverallActivity={topOverallActivity}
+          topOverallRegion={topOverallRegion}
+          formatInt={formatInt}
+        />
+      </DemandJurisdictionExplorer>
     </>
   );
 }
@@ -175,107 +78,406 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
-function sectorBarColor(index: number) {
-  if (index === 0) return "bg-[#003B5C]";
-  if (index === 1) return "bg-[#5A8CA8]";
-  if (index === 2) return "bg-[#7CA8C0]";
-  return "bg-[#9CC2D6]";
-}
-
-function SectorBarRow({
-  label,
-  value,
-  max,
-  colorClass,
+function TotalApplicationsCard({
+  overallTotals,
+  topOverallSector,
+  topOverallActivity,
+  topOverallRegion,
+  showBreakdown,
+  onToggleBreakdown,
   formatInt,
 }: {
-  label: string;
-  value: number;
-  max: number;
-  colorClass: string;
+  overallTotals: { total: number; local: number; international: number };
+  topOverallSector: SectorDemand | null;
+  topOverallActivity: ActivityBreakdown | null;
+  topOverallRegion: { region: string; count: number } | null;
+  showBreakdown?: boolean;
+  onToggleBreakdown?: () => void;
   formatInt: (v: number) => string;
 }) {
-  const pct = Math.max(0, Math.min(1, value / (max || 1)));
   return (
-    <div>
-      <div className="flex items-center justify-between gap-4 text-sm">
-        <div className="min-w-0 truncate text-gray-700">{label}</div>
-        <div className="text-right font-semibold text-gray-900 tabular-nums">{formatInt(value)}</div>
+    <Card title="Total Applications">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Metric label="Total" value={formatInt(overallTotals.total)} />
+        <Metric label="Local" value={formatInt(overallTotals.local)} />
+        <Metric label="International" value={formatInt(overallTotals.international)} />
       </div>
-      <div className="mt-2 h-2 rounded-full bg-gray-100 overflow-hidden">
-        <div className={`h-2 rounded-full ${colorClass}`} style={{ width: `${pct * 100}%` }} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Insight label="Top overall sector" value={topOverallSector?.sector ?? "—"} />
+        <Insight label="Top overall activity" value={topOverallActivity?.activity_name ?? "—"} />
+        <Insight label="Top overall region" value={topOverallRegion?.region ?? "—"} />
+      </div>
+
+      <div>
+        <button
+          type="button"
+          onClick={onToggleBreakdown}
+          className="px-4 py-2 text-sm rounded-lg border border-[#E6ECF2] bg-white text-gray-700 hover:bg-gray-50"
+        >
+          {showBreakdown ? "Hide Jurisdiction Breakdown" : "View Jurisdiction Breakdown"}
+        </button>
+      </div>
+    </Card>
+  );
+}
+
+function DemandJurisdictionExplorer({
+  overallTotals,
+  topOverallSector,
+  topOverallActivity,
+  topOverallRegion,
+  jurisdictionTotals,
+  emirateTotalsByScope,
+  countryTotalsByScope,
+  countryOptions,
+  internationalTopRegionsAll,
+  overallTopSectors,
+  overallTopActivities,
+  formatInt,
+  children,
+}: {
+  overallTotals: { total: number; local: number; international: number };
+  topOverallSector: SectorDemand | null;
+  topOverallActivity: ActivityBreakdown | null;
+  topOverallRegion: { region: string; count: number } | null;
+  jurisdictionTotals: Record<JurisdictionKey, { total: number; local: number; international: number }>;
+  emirateTotalsByScope: Record<string, { total: number; local: number; international: number }>;
+  countryTotalsByScope: Record<string, { total: number; local: number; international: number }>;
+  countryOptions: string[];
+  internationalTopRegionsAll: { region: string; count: number }[];
+  overallTopSectors: SectorDemand[];
+  overallTopActivities: ActivityBreakdown[];
+  formatInt: (v: number) => string;
+  children: React.ReactElement;
+}) {
+  const [showBreakdown, setShowBreakdown] = React.useState(false);
+  const [activeJurisdiction, setActiveJurisdiction] = React.useState<JurisdictionKey | null>(null);
+  const [selectedEmirate, setSelectedEmirate] = React.useState<
+    "All" | "Abu Dhabi" | "Sharjah" | "Ajman" | "Ras Al Khaimah" | "Fujairah" | "Umm Al Quwain"
+  >("All");
+  const [selectedCountry, setSelectedCountry] = React.useState<string>("All Countries");
+
+  React.useEffect(() => {
+    if (!showBreakdown) {
+      setActiveJurisdiction(null);
+      setSelectedEmirate("All");
+      setSelectedCountry("All Countries");
+    }
+  }, [showBreakdown]);
+
+  const masterCard = React.cloneElement(children, {
+    overallTotals,
+    topOverallSector,
+    topOverallActivity,
+    topOverallRegion,
+    showBreakdown,
+    onToggleBreakdown: () => setShowBreakdown((v) => !v),
+  });
+
+  if (!showBreakdown) return masterCard;
+
+  return (
+    <div className="space-y-6">
+      {masterCard}
+
+      {activeJurisdiction === null ? (
+        <JurisdictionSelectorRow
+          totals={jurisdictionTotals}
+          onSelect={(j) => setActiveJurisdiction(j)}
+          formatInt={formatInt}
+        />
+      ) : (
+        <DemandDetailView
+          jurisdiction={activeJurisdiction}
+          onBack={() => setActiveJurisdiction(null)}
+          selectedEmirate={selectedEmirate}
+          setSelectedEmirate={setSelectedEmirate}
+          selectedCountry={selectedCountry}
+          setSelectedCountry={setSelectedCountry}
+          countryOptions={countryOptions}
+          emirateTotalsByScope={emirateTotalsByScope}
+          countryTotalsByScope={countryTotalsByScope}
+          jurisdictionTotals={jurisdictionTotals}
+          internationalTopRegionsAll={internationalTopRegionsAll}
+          overallTopSectors={overallTopSectors}
+          overallTopActivities={overallTopActivities}
+          formatInt={formatInt}
+        />
+      )}
+    </div>
+  );
+}
+
+function JurisdictionSelectorRow({
+  totals,
+  onSelect,
+  formatInt,
+}: {
+  totals: Record<JurisdictionKey, { total: number; local: number; international: number }>;
+  onSelect: (j: JurisdictionKey) => void;
+  formatInt: (v: number) => string;
+}) {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <button type="button" onClick={() => onSelect("Dubai")} className="text-left">
+        <Card title="Dubai">
+          <div className="grid grid-cols-3 gap-4">
+            <MiniMetric label="Total" value={formatInt(totals.Dubai.total)} />
+            <MiniMetric label="Local" value={formatInt(totals.Dubai.local)} />
+            <MiniMetric label="International" value={formatInt(totals.Dubai.international)} />
+          </div>
+        </Card>
+      </button>
+
+      <button type="button" onClick={() => onSelect("OtherEmirates")} className="text-left">
+        <Card title="Other Emirates">
+          <div className="grid grid-cols-3 gap-4">
+            <MiniMetric label="Total" value={formatInt(totals.OtherEmirates.total)} />
+            <MiniMetric label="Local" value={formatInt(totals.OtherEmirates.local)} />
+            <MiniMetric label="International" value={formatInt(totals.OtherEmirates.international)} />
+          </div>
+        </Card>
+      </button>
+
+      <button type="button" onClick={() => onSelect("International")} className="text-left">
+        <Card title="International">
+          <div className="grid grid-cols-3 gap-4">
+            <MiniMetric label="Total" value={formatInt(totals.International.total)} />
+            <MiniMetric label="Local" value={formatInt(totals.International.local)} />
+            <MiniMetric label="International" value={formatInt(totals.International.international)} />
+          </div>
+        </Card>
+      </button>
+    </div>
+  );
+}
+
+function DemandDetailView({
+  jurisdiction,
+  onBack,
+  selectedEmirate,
+  setSelectedEmirate,
+  selectedCountry,
+  setSelectedCountry,
+  countryOptions,
+  emirateTotalsByScope,
+  countryTotalsByScope,
+  jurisdictionTotals,
+  internationalTopRegionsAll,
+  overallTopSectors,
+  overallTopActivities,
+  formatInt,
+}: {
+  jurisdiction: JurisdictionKey;
+  onBack: () => void;
+  selectedEmirate: "All" | "Abu Dhabi" | "Sharjah" | "Ajman" | "Ras Al Khaimah" | "Fujairah" | "Umm Al Quwain";
+  setSelectedEmirate: React.Dispatch<
+    React.SetStateAction<
+      "All" | "Abu Dhabi" | "Sharjah" | "Ajman" | "Ras Al Khaimah" | "Fujairah" | "Umm Al Quwain"
+    >
+  >;
+  selectedCountry: string;
+  setSelectedCountry: React.Dispatch<React.SetStateAction<string>>;
+  countryOptions: string[];
+  emirateTotalsByScope: Record<string, { total: number; local: number; international: number }>;
+  countryTotalsByScope: Record<string, { total: number; local: number; international: number }>;
+  jurisdictionTotals: Record<JurisdictionKey, { total: number; local: number; international: number }>;
+  internationalTopRegionsAll: { region: string; count: number }[];
+  overallTopSectors: SectorDemand[];
+  overallTopActivities: ActivityBreakdown[];
+  formatInt: (v: number) => string;
+}) {
+  const title =
+    jurisdiction === "OtherEmirates" ? "Other Emirates" : jurisdiction === "International" ? "International" : "Dubai";
+
+  const totals =
+    jurisdiction === "Dubai"
+      ? jurisdictionTotals.Dubai
+      : jurisdiction === "OtherEmirates"
+        ? emirateTotalsByScope[selectedEmirate] || emirateTotalsByScope.All
+        : countryTotalsByScope[selectedCountry] || countryTotalsByScope["All Countries"];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-gray-500">Demand Intelligence</div>
+          <div className="mt-1 text-xl font-semibold text-[#003B5C]">{title}</div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onBack}
+          className="px-4 py-2 text-sm rounded-lg border border-[#E6ECF2] bg-white text-gray-700 hover:bg-gray-50"
+        >
+          Back to Jurisdictions
+        </button>
+      </div>
+
+      <Card title="Summary metrics">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Metric label="Total" value={formatInt(totals.total)} />
+          <Metric label="Local" value={formatInt(totals.local)} />
+          <Metric label="International" value={formatInt(totals.international)} />
+        </div>
+      </Card>
+
+      {jurisdiction === "OtherEmirates" ? (
+        <EmirateSelectorTabs selected={selectedEmirate} onSelect={setSelectedEmirate} />
+      ) : null}
+
+      {jurisdiction === "International" ? (
+        <CountryDropdown
+          selected={selectedCountry}
+          onChange={setSelectedCountry}
+          options={["All Countries", ...countryOptions]}
+        />
+      ) : null}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card title="Local Scope">
+          <div className="text-xs uppercase tracking-wider text-gray-500">Overall rankings</div>
+          <RankingList
+            rows={overallTopSectors.map((s) => ({ label: s.sector, value: formatInt(s.count) }))}
+            emptyLabel="No sector data yet."
+          />
+          <RankingList
+            rows={overallTopActivities.map((a) => ({ label: a.activity_name || a.activity_id, value: formatInt(a.count) }))}
+            emptyLabel="No activity data yet."
+          />
+        </Card>
+
+        <Card title="International Scope">
+          <div className="text-xs uppercase tracking-wider text-gray-500">Overall rankings</div>
+          <RankingList
+            rows={overallTopSectors.map((s) => ({ label: s.sector, value: formatInt(s.count) }))}
+            emptyLabel="No sector data yet."
+          />
+          <RankingList
+            rows={overallTopActivities.map((a) => ({ label: a.activity_name || a.activity_id, value: formatInt(a.count) }))}
+            emptyLabel="No activity data yet."
+          />
+          <div>
+            <div className="mt-2 text-xs uppercase tracking-wider text-gray-500">Top regions</div>
+            <RankingList
+              rows={internationalTopRegionsAll.map((r) => ({ label: r.region, value: formatInt(r.count) }))}
+              emptyLabel="No region data yet."
+            />
+          </div>
+        </Card>
       </div>
     </div>
   );
 }
 
-function EmiratesHeatmap({
-  data,
-  formatInt,
+function EmirateSelectorTabs({
+  selected,
+  onSelect,
 }: {
-  data: { emirate: string; Total: number }[];
-  formatInt: (v: number) => string;
+  selected: "All" | "Abu Dhabi" | "Sharjah" | "Ajman" | "Ras Al Khaimah" | "Fujairah" | "Umm Al Quwain";
+  onSelect: (v: any) => void;
 }) {
-  const valueByEmirate: Record<string, number> = {};
-  data.forEach((d) => {
-    valueByEmirate[d.emirate] = safeNum(d.Total);
-  });
-
-  const emirates = [
-    "Dubai",
+  const opts = [
+    "All",
     "Abu Dhabi",
     "Sharjah",
     "Ajman",
     "Ras Al Khaimah",
     "Fujairah",
     "Umm Al Quwain",
-  ];
-
-  function bucketClass(v: number) {
-    if (!v) return "bg-gray-100 text-gray-700";
-    if (v === 1) return "bg-[#DCEAF3] text-gray-900";
-    if (v === 2) return "bg-[#7CA8C0] text-white";
-    return "bg-[#003B5C] text-white";
-  }
+  ] as const;
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-      {emirates.map((emirate) => {
-        const v = valueByEmirate[emirate] || 0;
+    <div className="flex flex-wrap gap-2">
+      {opts.map((o) => {
+        const active = o === selected;
         return (
-          <div key={emirate} className={`rounded-xl p-4 ${bucketClass(v)}`}>
-            <div className="text-sm font-semibold">{emirate}</div>
-            <div className="mt-1 text-xs opacity-90">{formatInt(v)} signals</div>
-          </div>
+          <button
+            key={o}
+            type="button"
+            onClick={() => onSelect(o)}
+            className={`px-3 py-1.5 text-sm rounded-lg border border-[#E6ECF2] ${
+              active ? "bg-[#003B5C] text-white" : "bg-white text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            {o}
+          </button>
         );
       })}
     </div>
   );
 }
 
-function Empty() {
-  return <div className="text-sm text-gray-500">No data yet.</div>;
-}
-
-function TableRow4({ a, b, c, d }: { a: string; b: string; c: string; d: string }) {
+function CountryDropdown({
+  selected,
+  onChange,
+  options,
+}: {
+  selected: string;
+  onChange: (v: string) => void;
+  options: string[];
+}) {
   return (
-    <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 items-center py-2 text-sm hover:bg-gray-50">
-      <div className="min-w-0 truncate text-gray-700">{a}</div>
-      <div className="text-right font-semibold text-gray-900 w-16 tabular-nums">{b}</div>
-      <div className="text-right font-semibold text-gray-900 w-16 tabular-nums">{c}</div>
-      <div className="text-right font-semibold text-gray-900 w-16 tabular-nums">{d}</div>
+    <div>
+      <select
+        value={selected}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full md:w-auto px-3 py-2 text-sm rounded-lg border border-[#E6ECF2] bg-white text-gray-700"
+      >
+        {options.map((c) => (
+          <option key={c} value={c}>
+            {c}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
 
-function Toggle({ expanded, onClick }: { expanded: boolean; onClick: () => void }) {
+function RankingList({
+  rows,
+  emptyLabel,
+}: {
+  rows: { label: string; value: string }[];
+  emptyLabel: string;
+}) {
+  if (!rows.length) return <div className="text-sm text-gray-500">{emptyLabel}</div>;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="pt-2 text-sm font-semibold text-[#003B5C] hover:underline"
-    >
-      {expanded ? "Show less" : "View all"}
-    </button>
+    <div className="divide-y divide-gray-100">
+      {rows.slice(0, 10).map((r) => (
+        <div key={`${r.label}-${r.value}`} className="flex items-center justify-between gap-6 py-2 text-sm">
+          <div className="min-w-0 truncate text-gray-700">{r.label}</div>
+          <div className="text-right font-semibold text-gray-900 tabular-nums">{r.value}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-lg font-semibold text-[#003B5C] tabular-nums">{value}</div>
+      <div className="mt-1 text-[11px] uppercase tracking-wider text-gray-500">{label}</div>
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-2xl font-semibold text-[#003B5C] tabular-nums">{value}</div>
+      <div className="mt-1 text-xs uppercase tracking-wider text-gray-500">{label}</div>
+    </div>
+  );
+}
+
+function Insight({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-xs uppercase tracking-wider text-gray-500">{label}</div>
+      <div className="mt-1 text-sm font-semibold text-[#003B5C] truncate">{value}</div>
+    </div>
   );
 }
