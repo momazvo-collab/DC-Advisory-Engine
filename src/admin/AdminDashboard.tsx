@@ -9,9 +9,7 @@ import EngagementSection from "./sections/EngagementSection";
 import {
   buildExecutiveSignals,
   computeBaseScopeMatrix,
-  type ActivityBreakdown,
   type AnalyticsResponse,
-  type SectorDemand,
 } from "./intelligence/demandAggregations";
 
 type ScopeBreakdown<T> = {
@@ -32,11 +30,6 @@ type RegionRankings = {
   Dubai: RankingItem[];
   OtherEmirates: RankingItem[];
   countries: Record<string, RankingItem[]>;
-};
-
-const EMPTY_SCOPE_BREAKDOWN: ScopeBreakdown<RankingItem> = {
-  local: [],
-  international: [],
 };
 
 export default function AdminDashboard() {
@@ -199,17 +192,30 @@ export default function AdminDashboard() {
     if (scope === "International") addCount(target.international, label, count);
   };
 
+  const activityById = new Map<string, { activity_name: string; sector: string }>();
+  for (const a of activity_breakdown || []) {
+    const id = String(a.activity_id ?? "").trim();
+    if (id) {
+      activityById.set(id, {
+        activity_name: String(a.activity_name ?? id).trim(),
+        sector: String(a.sector ?? "").trim(),
+      });
+    }
+  }
+
   for (const r of detailed_location || []) {
     const locationBase = normalize(r.location_base);
     const scope = normalize(r.scope);
     const count = safeNum(r.count);
-    const detailedRow = r as typeof r & {
-      sector?: string | null;
-      activity_name?: string | null;
-      activity_id?: string | null;
-    };
-    const sectorLabel = normalize(detailedRow.sector);
-    const activityLabel = normalize(detailedRow.activity_name || detailedRow.activity_id);
+
+    const rawActivityId = String(r.activity_id ?? "").trim();
+    const looked = rawActivityId ? activityById.get(rawActivityId) : undefined;
+    const rawSector = normalize(r.sector);
+    const sectorLabel =
+      rawSector !== "Unknown" ? rawSector : looked?.sector ? normalize(looked.sector) : "Unknown";
+    const activityLabel = looked?.activity_name
+      ? looked.activity_name
+      : rawActivityId || "Unknown";
 
     if (locationBase === "International") {
       const country = normalize(r.country);

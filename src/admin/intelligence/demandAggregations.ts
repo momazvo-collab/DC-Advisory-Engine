@@ -8,6 +8,8 @@ export type DetailedLocation = {
   country: string | null;
   scope: string | null;
   region: string | null;
+  sector?: string | null;
+  activity_id?: string | null;
   count: number;
 };
 
