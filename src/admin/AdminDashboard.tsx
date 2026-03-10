@@ -69,7 +69,7 @@ export default function AdminDashboard() {
   if (error) return <div className="p-10 text-red-600">{error}</div>;
   if (!data) return null;
 
-  const { kpis, top_services, detailed_location, activity_breakdown, sector_demand } = data;
+  const { kpis, top_services, detailed_location, activity_breakdown, sector_demand, region_sector_activity_demand } = data;
 
   const signals = buildExecutiveSignals(data);
 
@@ -208,15 +208,6 @@ export default function AdminDashboard() {
     const scope = normalize(r.scope);
     const count = safeNum(r.count);
 
-    const rawActivityId = String(r.activity_id ?? "").trim();
-    const looked = rawActivityId ? activityById.get(rawActivityId) : undefined;
-    const rawSector = normalize(r.sector);
-    const sectorLabel =
-      rawSector !== "Unknown" ? rawSector : looked?.sector ? normalize(looked.sector) : "Unknown";
-    const activityLabel = looked?.activity_name
-      ? looked.activity_name
-      : rawActivityId || "Unknown";
-
     if (locationBase === "International") {
       const country = normalize(r.country);
       if (country !== "Unknown") countrySet.add(country);
@@ -234,23 +225,10 @@ export default function AdminDashboard() {
       if (scope === "International") {
         countryTotalsByScope[bucketKey].international += count;
         countryTotalsByScope["All Countries"].international += count;
-
         const region = normalize(r.region);
         if (region !== "Unknown") {
           regionTotalsInternational[region] = (regionTotalsInternational[region] || 0) + count;
         }
-      }
-
-      if (!sectorCounters.countries[bucketKey]) {
-        sectorCounters.countries[bucketKey] = createScopeCounters();
-      }
-      if (!activityCounters.countries[bucketKey]) {
-        activityCounters.countries[bucketKey] = createScopeCounters();
-      }
-      addScopedRanking(sectorCounters.countries[bucketKey], scope, sectorLabel, count);
-      addScopedRanking(activityCounters.countries[bucketKey], scope, activityLabel, count);
-
-      if (scope === "International") {
         if (!regionCounters.countries[bucketKey]) {
           regionCounters.countries[bucketKey] = createRegionCounter();
         }
@@ -273,32 +251,49 @@ export default function AdminDashboard() {
       if (scope === "International") {
         emirateTotalsByScope[bucketKey].international += count;
         emirateTotalsByScope.All.international += count;
-      }
-
-      if (!sectorCounters.emirates[bucketKey]) {
-        sectorCounters.emirates[bucketKey] = createScopeCounters();
-      }
-      if (!activityCounters.emirates[bucketKey]) {
-        activityCounters.emirates[bucketKey] = createScopeCounters();
-      }
-      addScopedRanking(sectorCounters.emirates[bucketKey], scope, sectorLabel, count);
-      addScopedRanking(activityCounters.emirates[bucketKey], scope, activityLabel, count);
-
-      addScopedRanking(sectorCounters.OtherEmirates, scope, sectorLabel, count);
-      addScopedRanking(activityCounters.OtherEmirates, scope, activityLabel, count);
-
-      if (scope === "International") {
         addCount(regionCounters.OtherEmirates.international, normalize(r.region), count);
       }
     }
 
+    if (locationBase === "Dubai" && scope === "International") {
+      addCount(regionCounters.Dubai.international, normalize(r.region), count);
+    }
+  }
+
+  for (const r of region_sector_activity_demand || []) {
+    const locationBase = normalize(r.location_base);
+    const scope = normalize(r.scope);
+    const count = safeNum(r.count);
+
+    const rawActivityName = String(r.activity_name ?? "").trim();
+    const rawActivityId = String(r.activity_id ?? "").trim();
+    const looked = rawActivityId ? activityById.get(rawActivityId) : undefined;
+    const sectorLabel = String(r.sector ?? "").trim() || looked?.sector || "Unknown";
+    const activityLabel = rawActivityName || looked?.activity_name || rawActivityId || "Unknown";
+
     if (locationBase === "Dubai") {
       addScopedRanking(sectorCounters.Dubai, scope, sectorLabel, count);
       addScopedRanking(activityCounters.Dubai, scope, activityLabel, count);
+    }
 
-      if (scope === "International") {
-        addCount(regionCounters.Dubai.international, normalize(r.region), count);
-      }
+    if (locationBase === "UAE") {
+      const emirate = normalizeEmirate(r.emirate);
+      const bucketKey = emirate === "Unknown" ? "Unknown" : emirate;
+      if (!sectorCounters.emirates[bucketKey]) sectorCounters.emirates[bucketKey] = createScopeCounters();
+      if (!activityCounters.emirates[bucketKey]) activityCounters.emirates[bucketKey] = createScopeCounters();
+      addScopedRanking(sectorCounters.emirates[bucketKey], scope, sectorLabel, count);
+      addScopedRanking(activityCounters.emirates[bucketKey], scope, activityLabel, count);
+      addScopedRanking(sectorCounters.OtherEmirates, scope, sectorLabel, count);
+      addScopedRanking(activityCounters.OtherEmirates, scope, activityLabel, count);
+    }
+
+    if (locationBase === "International") {
+      const country = normalize(r.country);
+      const bucketKey = country === "Unknown" ? "Unknown" : country;
+      if (!sectorCounters.countries[bucketKey]) sectorCounters.countries[bucketKey] = createScopeCounters();
+      if (!activityCounters.countries[bucketKey]) activityCounters.countries[bucketKey] = createScopeCounters();
+      addScopedRanking(sectorCounters.countries[bucketKey], scope, sectorLabel, count);
+      addScopedRanking(activityCounters.countries[bucketKey], scope, activityLabel, count);
     }
   }
 

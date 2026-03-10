@@ -10,6 +10,7 @@ export type DetailedLocation = {
   region: string | null;
   sector?: string | null;
   activity_id?: string | null;
+  activity_name?: string | null;
   count: number;
 };
 
@@ -56,6 +57,18 @@ export type SectorDemand = { sector: string; count: number };
 export type SectorScopeDemand = { scope: string; sector: string; count: number };
 export type RegionSectorDemand = { region: string; sector: string; count: number };
 
+export type ActivityLocationDemand = {
+  sector: string | null;
+  activity_id: string | null;
+  activity_name: string | null;
+  location_base: string | null;
+  emirate: string | null;
+  country: string | null;
+  scope: string | null;
+  region: string | null;
+  count: number;
+};
+
 export type Kpis = {
   results_viewed: number;
   email_submitted: number;
@@ -74,6 +87,7 @@ export type AnalyticsResponse = {
   sector_demand: SectorDemand[];
   sector_scope_demand?: SectorScopeDemand[];
   region_sector_demand?: RegionSectorDemand[];
+  region_sector_activity_demand?: ActivityLocationDemand[];
 };
 
 export function computeUaeEmiratesTable(detailed: DetailedLocation[]) {
