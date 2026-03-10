@@ -78,6 +78,28 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
+function MetricBox({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-[#E6ECF2] bg-white p-4">
+      <div className="text-xs uppercase tracking-wider text-gray-500">{label}</div>
+      <div className="mt-2 text-2xl font-semibold text-[#003B5C] tabular-nums">{value}</div>
+    </div>
+  );
+}
+
+function IntelligenceBlock({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-[#E6ECF2] bg-white p-4">
+      <div className="text-xs uppercase tracking-wider text-gray-500">{label}</div>
+      <div className="mt-2 text-sm font-semibold text-[#003B5C] truncate">{value}</div>
+    </div>
+  );
+}
+
+function Divider() {
+  return <div className="h-px bg-gray-100" />;
+}
+
 function TotalApplicationsCard({
   overallTotals,
   topOverallSector,
@@ -97,16 +119,18 @@ function TotalApplicationsCard({
 }) {
   return (
     <Card title="Total Applications">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Metric label="Total" value={formatInt(overallTotals.total)} />
-        <Metric label="Local" value={formatInt(overallTotals.local)} />
-        <Metric label="International" value={formatInt(overallTotals.international)} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <MetricBox label="Total Applications" value={formatInt(overallTotals.total)} />
+        <MetricBox label="Local Applications" value={formatInt(overallTotals.local)} />
+        <MetricBox label="International Applications" value={formatInt(overallTotals.international)} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Insight label="Top overall sector" value={topOverallSector?.sector ?? "—"} />
-        <Insight label="Top overall activity" value={topOverallActivity?.activity_name ?? "—"} />
-        <Insight label="Top overall region" value={topOverallRegion?.region ?? "—"} />
+      <Divider />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <IntelligenceBlock label="Top Sector" value={topOverallSector?.sector ?? "—"} />
+        <IntelligenceBlock label="Top Activity" value={topOverallActivity?.activity_name ?? "—"} />
+        <IntelligenceBlock label="Top Expansion Region" value={topOverallRegion?.region ?? "—"} />
       </div>
 
       <div>
@@ -220,36 +244,61 @@ function JurisdictionSelectorRow({
 }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <button type="button" onClick={() => onSelect("Dubai")} className="text-left">
-        <Card title="Dubai">
-          <div className="grid grid-cols-3 gap-4">
-            <MiniMetric label="Total" value={formatInt(totals.Dubai.total)} />
-            <MiniMetric label="Local" value={formatInt(totals.Dubai.local)} />
-            <MiniMetric label="International" value={formatInt(totals.Dubai.international)} />
-          </div>
-        </Card>
-      </button>
+      <JurisdictionCard
+        title="Dubai"
+        totals={totals.Dubai}
+        onClick={() => onSelect("Dubai")}
+        formatInt={formatInt}
+      />
 
-      <button type="button" onClick={() => onSelect("OtherEmirates")} className="text-left">
-        <Card title="Other Emirates">
-          <div className="grid grid-cols-3 gap-4">
-            <MiniMetric label="Total" value={formatInt(totals.OtherEmirates.total)} />
-            <MiniMetric label="Local" value={formatInt(totals.OtherEmirates.local)} />
-            <MiniMetric label="International" value={formatInt(totals.OtherEmirates.international)} />
-          </div>
-        </Card>
-      </button>
+      <JurisdictionCard
+        title="Other Emirates"
+        totals={totals.OtherEmirates}
+        onClick={() => onSelect("OtherEmirates")}
+        formatInt={formatInt}
+      />
 
-      <button type="button" onClick={() => onSelect("International")} className="text-left">
-        <Card title="International">
-          <div className="grid grid-cols-3 gap-4">
-            <MiniMetric label="Total" value={formatInt(totals.International.total)} />
-            <MiniMetric label="Local" value={formatInt(totals.International.local)} />
-            <MiniMetric label="International" value={formatInt(totals.International.international)} />
-          </div>
-        </Card>
-      </button>
+      <JurisdictionCard
+        title="International"
+        totals={totals.International}
+        onClick={() => onSelect("International")}
+        formatInt={formatInt}
+      />
     </div>
+  );
+}
+
+function JurisdictionCard({
+  title,
+  totals,
+  onClick,
+  formatInt,
+}: {
+  title: string;
+  totals: { total: number; local: number; international: number };
+  onClick: () => void;
+  formatInt: (v: number) => string;
+}) {
+  return (
+    <button type="button" onClick={onClick} className="text-left">
+      <div className="rounded-xl border border-[#E6ECF2] bg-white shadow-sm p-6 hover:bg-gray-50">
+        <div className="text-sm font-semibold text-[#003B5C]">{title}</div>
+        <div className="mt-4 space-y-2">
+          <div className="flex items-baseline justify-between gap-6">
+            <div className="text-sm text-gray-600">Total Applications</div>
+            <div className="text-lg font-semibold text-[#003B5C] tabular-nums">{formatInt(totals.total)}</div>
+          </div>
+          <div className="flex items-baseline justify-between gap-6">
+            <div className="text-sm text-gray-600">Local Applications</div>
+            <div className="text-sm font-semibold text-gray-900 tabular-nums">{formatInt(totals.local)}</div>
+          </div>
+          <div className="flex items-baseline justify-between gap-6">
+            <div className="text-sm text-gray-600">International Applications</div>
+            <div className="text-sm font-semibold text-gray-900 tabular-nums">{formatInt(totals.international)}</div>
+          </div>
+        </div>
+      </div>
+    </button>
   );
 }
 
@@ -291,6 +340,9 @@ function DemandDetailView({
   const title =
     jurisdiction === "OtherEmirates" ? "Other Emirates" : jurisdiction === "International" ? "International" : "Dubai";
 
+  const totalsKey =
+    jurisdiction === "Dubai" ? "Dubai" : jurisdiction === "OtherEmirates" ? selectedEmirate : selectedCountry;
+
   const totals =
     jurisdiction === "Dubai"
       ? jurisdictionTotals.Dubai
@@ -298,12 +350,17 @@ function DemandDetailView({
         ? emirateTotalsByScope[selectedEmirate] || emirateTotalsByScope.All
         : countryTotalsByScope[selectedCountry] || countryTotalsByScope["All Countries"];
 
+  const hasApplications = totals.total > 0;
+  const topRegions = internationalTopRegionsAll.slice(0, 3).map((r) => ({ label: r.region, value: formatInt(r.count) }));
+  const noRankingLabel = "No ranking data yet";
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
           <div className="text-xs uppercase tracking-wider text-gray-500">Demand Intelligence</div>
           <div className="mt-1 text-xl font-semibold text-[#003B5C]">{title}</div>
+          <div className="mt-1 text-sm text-gray-600">{totalsKey}</div>
         </div>
 
         <button
@@ -316,11 +373,17 @@ function DemandDetailView({
       </div>
 
       <Card title="Summary metrics">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Metric label="Total" value={formatInt(totals.total)} />
-          <Metric label="Local" value={formatInt(totals.local)} />
-          <Metric label="International" value={formatInt(totals.international)} />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <MetricBox label="Total Applications" value={formatInt(totals.total)} />
+          <MetricBox label="Local Applications" value={formatInt(totals.local)} />
+          <MetricBox label="International Applications" value={formatInt(totals.international)} />
         </div>
+
+        {!hasApplications ? (
+          <div className="rounded-xl border border-[#E6ECF2] bg-white p-4 text-sm text-gray-600">
+            No applications yet
+          </div>
+        ) : null}
       </Card>
 
       {jurisdiction === "OtherEmirates" ? (
@@ -335,38 +398,50 @@ function DemandDetailView({
         />
       ) : null}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card title="Local Scope">
-          <div className="text-xs uppercase tracking-wider text-gray-500">Overall rankings</div>
-          <RankingList
-            rows={overallTopSectors.map((s) => ({ label: s.sector, value: formatInt(s.count) }))}
-            emptyLabel="No sector data yet."
-          />
-          <RankingList
-            rows={overallTopActivities.map((a) => ({ label: a.activity_name || a.activity_id, value: formatInt(a.count) }))}
-            emptyLabel="No activity data yet."
-          />
-        </Card>
-
-        <Card title="International Scope">
-          <div className="text-xs uppercase tracking-wider text-gray-500">Overall rankings</div>
-          <RankingList
-            rows={overallTopSectors.map((s) => ({ label: s.sector, value: formatInt(s.count) }))}
-            emptyLabel="No sector data yet."
-          />
-          <RankingList
-            rows={overallTopActivities.map((a) => ({ label: a.activity_name || a.activity_id, value: formatInt(a.count) }))}
-            emptyLabel="No activity data yet."
-          />
-          <div>
-            <div className="mt-2 text-xs uppercase tracking-wider text-gray-500">Top regions</div>
-            <RankingList
-              rows={internationalTopRegionsAll.map((r) => ({ label: r.region, value: formatInt(r.count) }))}
-              emptyLabel="No region data yet."
+      {jurisdiction === "International" ? (
+        <Card title="Intelligence">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <IntelligencePanel
+              title="Top Sectors"
+              rows={[]}
+              emptyLabel={noRankingLabel}
+            />
+            <IntelligencePanel
+              title="Top Activities"
+              rows={[]}
+              emptyLabel={noRankingLabel}
+            />
+            <IntelligencePanel
+              title="Top Expansion Regions"
+              rows={hasApplications ? topRegions : []}
+              emptyLabel={hasApplications ? "No region data yet" : "No applications yet"}
             />
           </div>
         </Card>
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card title="Local Applications">
+            <div className="grid grid-cols-1 gap-4">
+              <MetricBox label="Applications" value={formatInt(totals.local)} />
+              <IntelligencePanel title="Top Sectors (Top 3)" rows={[]} emptyLabel={noRankingLabel} />
+              <IntelligencePanel title="Top Activities (Top 3)" rows={[]} emptyLabel={noRankingLabel} />
+            </div>
+          </Card>
+
+          <Card title="International Applications">
+            <div className="grid grid-cols-1 gap-4">
+              <MetricBox label="Applications" value={formatInt(totals.international)} />
+              <IntelligencePanel title="Top Sectors (Top 3)" rows={[]} emptyLabel={noRankingLabel} />
+              <IntelligencePanel title="Top Activities (Top 3)" rows={[]} emptyLabel={noRankingLabel} />
+              <IntelligencePanel
+                title="Top Expansion Regions (Top 3)"
+                rows={hasApplications ? topRegions : []}
+                emptyLabel={hasApplications ? "No region data yet" : "No applications yet"}
+              />
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
@@ -397,7 +472,7 @@ function EmirateSelectorTabs({
             key={o}
             type="button"
             onClick={() => onSelect(o)}
-            className={`px-3 py-1.5 text-sm rounded-lg border border-[#E6ECF2] ${
+            className={`px-3 py-2 text-sm rounded-lg border border-[#E6ECF2] ${
               active ? "bg-[#003B5C] text-white" : "bg-white text-gray-700 hover:bg-gray-50"
             }`}
           >
@@ -455,20 +530,21 @@ function RankingList({
   );
 }
 
-function MiniMetric({ label, value }: { label: string; value: string }) {
+function IntelligencePanel({
+  title,
+  rows,
+  emptyLabel,
+}: {
+  title: string;
+  rows: { label: string; value: string }[];
+  emptyLabel: string;
+}) {
   return (
-    <div>
-      <div className="text-lg font-semibold text-[#003B5C] tabular-nums">{value}</div>
-      <div className="mt-1 text-[11px] uppercase tracking-wider text-gray-500">{label}</div>
-    </div>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="text-2xl font-semibold text-[#003B5C] tabular-nums">{value}</div>
-      <div className="mt-1 text-xs uppercase tracking-wider text-gray-500">{label}</div>
+    <div className="rounded-xl border border-[#E6ECF2] bg-white p-4">
+      <div className="text-xs uppercase tracking-wider text-gray-500">{title}</div>
+      <div className="mt-3">
+        <RankingList rows={rows.slice(0, 3)} emptyLabel={emptyLabel} />
+      </div>
     </div>
   );
 }
