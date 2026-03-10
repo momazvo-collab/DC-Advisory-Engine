@@ -21,6 +21,7 @@ export default function DemandSection({
   sectorRankings,
   activityRankings,
   regionRankings,
+  countryRankings,
   formatInt,
 }: {
   overallTotals: { total: number; local: number; international: number };
@@ -41,20 +42,24 @@ export default function DemandSection({
   sectorRankings: {
     Dubai: ScopeBreakdown;
     OtherEmirates: ScopeBreakdown;
+    International: ScopeBreakdown;
     emirates: Record<string, ScopeBreakdown>;
     countries: Record<string, ScopeBreakdown>;
   };
   activityRankings: {
     Dubai: ScopeBreakdown;
     OtherEmirates: ScopeBreakdown;
+    International: ScopeBreakdown;
     emirates: Record<string, ScopeBreakdown>;
     countries: Record<string, ScopeBreakdown>;
   };
   regionRankings: {
     Dubai: RankingItem[];
     OtherEmirates: RankingItem[];
+    International: RankingItem[];
     countries: Record<string, RankingItem[]>;
   };
+  countryRankings: { local: RankingItem[]; international: RankingItem[] };
   formatInt: (v: number) => string;
 }) {
   return (
@@ -76,6 +81,7 @@ export default function DemandSection({
         sectorRankings={sectorRankings}
         activityRankings={activityRankings}
         regionRankings={regionRankings}
+        countryRankings={countryRankings}
         formatInt={formatInt}
       >
         <TotalApplicationsCard
@@ -186,6 +192,7 @@ function DemandJurisdictionExplorer({
   sectorRankings,
   activityRankings,
   regionRankings,
+  countryRankings,
   formatInt,
   children,
 }: {
@@ -203,20 +210,24 @@ function DemandJurisdictionExplorer({
   sectorRankings: {
     Dubai: ScopeBreakdown;
     OtherEmirates: ScopeBreakdown;
+    International: ScopeBreakdown;
     emirates: Record<string, ScopeBreakdown>;
     countries: Record<string, ScopeBreakdown>;
   };
   activityRankings: {
     Dubai: ScopeBreakdown;
     OtherEmirates: ScopeBreakdown;
+    International: ScopeBreakdown;
     emirates: Record<string, ScopeBreakdown>;
     countries: Record<string, ScopeBreakdown>;
   };
   regionRankings: {
     Dubai: RankingItem[];
     OtherEmirates: RankingItem[];
+    International: RankingItem[];
     countries: Record<string, RankingItem[]>;
   };
+  countryRankings: { local: RankingItem[]; international: RankingItem[] };
   formatInt: (v: number) => string;
   children: React.ReactElement;
 }) {
@@ -274,6 +285,7 @@ function DemandJurisdictionExplorer({
           sectorRankings={sectorRankings}
           activityRankings={activityRankings}
           regionRankings={regionRankings}
+          countryRankings={countryRankings}
           formatInt={formatInt}
         />
       )}
@@ -367,6 +379,7 @@ function DemandDetailView({
   sectorRankings,
   activityRankings,
   regionRankings,
+  countryRankings,
   formatInt,
 }: {
   jurisdiction: JurisdictionKey;
@@ -389,20 +402,24 @@ function DemandDetailView({
   sectorRankings: {
     Dubai: ScopeBreakdown;
     OtherEmirates: ScopeBreakdown;
+    International: ScopeBreakdown;
     emirates: Record<string, ScopeBreakdown>;
     countries: Record<string, ScopeBreakdown>;
   };
   activityRankings: {
     Dubai: ScopeBreakdown;
     OtherEmirates: ScopeBreakdown;
+    International: ScopeBreakdown;
     emirates: Record<string, ScopeBreakdown>;
     countries: Record<string, ScopeBreakdown>;
   };
   regionRankings: {
     Dubai: RankingItem[];
     OtherEmirates: RankingItem[];
+    International: RankingItem[];
     countries: Record<string, RankingItem[]>;
   };
+  countryRankings: { local: RankingItem[]; international: RankingItem[] };
   formatInt: (v: number) => string;
 }) {
   const title =
@@ -419,35 +436,38 @@ function DemandDetailView({
         : countryTotalsByScope[selectedCountry] || countryTotalsByScope["All Countries"];
 
   const hasApplications = totals.total > 0;
+  const emptyScope: ScopeBreakdown = { local: [], international: [] };
   const rankingSource =
     jurisdiction === "Dubai"
       ? {
           sectors: sectorRankings.Dubai,
           activities: activityRankings.Dubai,
           regions: regionRankings.Dubai,
+          countries: { local: [] as RankingItem[], international: [] as RankingItem[] },
         }
       : jurisdiction === "OtherEmirates"
-        ? selectedEmirate === "All"
-          ? {
-              sectors: sectorRankings.OtherEmirates,
-              activities: activityRankings.OtherEmirates,
-              regions: regionRankings.OtherEmirates,
-            }
-          : {
-              sectors: sectorRankings.emirates[selectedEmirate] || { local: [], international: [] },
-              activities: activityRankings.emirates[selectedEmirate] || { local: [], international: [] },
-              regions: regionRankings.OtherEmirates,
-            }
+        ? {
+            sectors: selectedEmirate === "All"
+              ? sectorRankings.OtherEmirates
+              : sectorRankings.emirates[selectedEmirate] || emptyScope,
+            activities: selectedEmirate === "All"
+              ? activityRankings.OtherEmirates
+              : activityRankings.emirates[selectedEmirate] || emptyScope,
+            regions: regionRankings.OtherEmirates,
+            countries: { local: [] as RankingItem[], international: [] as RankingItem[] },
+          }
         : selectedCountry === "All Countries"
           ? {
-              sectors: { local: [], international: [] },
-              activities: { local: [], international: [] },
-              regions: internationalTopRegionsAll.slice(0, 3).map((r) => ({ label: r.region, count: r.count })),
+              sectors: sectorRankings.International,
+              activities: activityRankings.International,
+              regions: regionRankings.International,
+              countries: countryRankings,
             }
           : {
-              sectors: sectorRankings.countries[selectedCountry] || { local: [], international: [] },
-              activities: activityRankings.countries[selectedCountry] || { local: [], international: [] },
+              sectors: sectorRankings.countries[selectedCountry] || emptyScope,
+              activities: activityRankings.countries[selectedCountry] || emptyScope,
               regions: regionRankings.countries[selectedCountry] || [],
+              countries: { local: [] as RankingItem[], international: [] as RankingItem[] },
             };
 
   const localSectorRows = rankingSource.sectors.local.map((r) => ({ label: r.label, value: formatInt(r.count) }));
@@ -455,6 +475,9 @@ function DemandDetailView({
   const internationalSectorRows = rankingSource.sectors.international.map((r) => ({ label: r.label, value: formatInt(r.count) }));
   const internationalActivityRows = rankingSource.activities.international.map((r) => ({ label: r.label, value: formatInt(r.count) }));
   const topRegions = rankingSource.regions.map((r) => ({ label: r.label, value: formatInt(r.count) }));
+  const localCountryRows = rankingSource.countries.local.map((r) => ({ label: r.label, value: formatInt(r.count) }));
+  const internationalCountryRows = rankingSource.countries.international.map((r) => ({ label: r.label, value: formatInt(r.count) }));
+  const showCountryRankings = jurisdiction === "International" && selectedCountry === "All Countries";
   const noRankingLabel = "No ranking data yet";
 
   return (
@@ -501,66 +524,58 @@ function DemandDetailView({
         />
       ) : null}
 
-      {jurisdiction === "International" ? (
-        <Card title="Intelligence">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card title="Local Applications">
+          <div className="grid grid-cols-1 gap-4">
+            <MetricBox label="Applications" value={formatInt(totals.local)} />
+            {showCountryRankings ? (
+              <IntelligencePanel
+                title="Top Countries (Top 3)"
+                rows={localCountryRows}
+                emptyLabel={totals.local > 0 ? noRankingLabel : "No applications yet"}
+              />
+            ) : null}
             <IntelligencePanel
-              title="Top Sectors"
+              title="Top Sectors (Top 3)"
+              rows={localSectorRows}
+              emptyLabel={totals.local > 0 ? noRankingLabel : "No applications yet"}
+            />
+            <IntelligencePanel
+              title="Top Activities (Top 3)"
+              rows={localActivityRows}
+              emptyLabel={totals.local > 0 ? noRankingLabel : "No applications yet"}
+            />
+          </div>
+        </Card>
+
+        <Card title="International Applications">
+          <div className="grid grid-cols-1 gap-4">
+            <MetricBox label="Applications" value={formatInt(totals.international)} />
+            {showCountryRankings ? (
+              <IntelligencePanel
+                title="Top Countries (Top 3)"
+                rows={internationalCountryRows}
+                emptyLabel={totals.international > 0 ? noRankingLabel : "No applications yet"}
+              />
+            ) : null}
+            <IntelligencePanel
+              title="Top Sectors (Top 3)"
               rows={internationalSectorRows}
-              emptyLabel={hasApplications ? noRankingLabel : "No applications yet"}
+              emptyLabel={totals.international > 0 ? noRankingLabel : "No applications yet"}
             />
             <IntelligencePanel
-              title="Top Activities"
+              title="Top Activities (Top 3)"
               rows={internationalActivityRows}
-              emptyLabel={hasApplications ? noRankingLabel : "No applications yet"}
+              emptyLabel={totals.international > 0 ? noRankingLabel : "No applications yet"}
             />
             <IntelligencePanel
-              title="Top Expansion Regions"
+              title="Top Expansion Regions (Top 3)"
               rows={hasApplications ? topRegions : []}
               emptyLabel={hasApplications ? "No region data yet" : "No applications yet"}
             />
           </div>
         </Card>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card title="Local Applications">
-            <div className="grid grid-cols-1 gap-4">
-              <MetricBox label="Applications" value={formatInt(totals.local)} />
-              <IntelligencePanel
-                title="Top Sectors (Top 3)"
-                rows={localSectorRows}
-                emptyLabel={totals.local > 0 ? noRankingLabel : "No applications yet"}
-              />
-              <IntelligencePanel
-                title="Top Activities (Top 3)"
-                rows={localActivityRows}
-                emptyLabel={totals.local > 0 ? noRankingLabel : "No applications yet"}
-              />
-            </div>
-          </Card>
-
-          <Card title="International Applications">
-            <div className="grid grid-cols-1 gap-4">
-              <MetricBox label="Applications" value={formatInt(totals.international)} />
-              <IntelligencePanel
-                title="Top Sectors (Top 3)"
-                rows={internationalSectorRows}
-                emptyLabel={totals.international > 0 ? noRankingLabel : "No applications yet"}
-              />
-              <IntelligencePanel
-                title="Top Activities (Top 3)"
-                rows={internationalActivityRows}
-                emptyLabel={totals.international > 0 ? noRankingLabel : "No applications yet"}
-              />
-              <IntelligencePanel
-                title="Top Expansion Regions (Top 3)"
-                rows={hasApplications ? topRegions : []}
-                emptyLabel={hasApplications ? "No region data yet" : "No applications yet"}
-              />
-            </div>
-          </Card>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

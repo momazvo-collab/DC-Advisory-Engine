@@ -22,6 +22,7 @@ type RankingItem = { label: string; count: number };
 type GeographyRankings = {
   Dubai: ScopeBreakdown<RankingItem>;
   OtherEmirates: ScopeBreakdown<RankingItem>;
+  International: ScopeBreakdown<RankingItem>;
   emirates: Record<string, ScopeBreakdown<RankingItem>>;
   countries: Record<string, ScopeBreakdown<RankingItem>>;
 };
@@ -29,7 +30,13 @@ type GeographyRankings = {
 type RegionRankings = {
   Dubai: RankingItem[];
   OtherEmirates: RankingItem[];
+  International: RankingItem[];
   countries: Record<string, RankingItem[]>;
+};
+
+type CountryRankings = {
+  local: RankingItem[];
+  international: RankingItem[];
 };
 
 export default function AdminDashboard() {
@@ -160,6 +167,7 @@ export default function AdminDashboard() {
   const sectorCounters = {
     Dubai: createScopeCounters(),
     OtherEmirates: createScopeCounters(),
+    International: createScopeCounters(),
     emirates: {} as Record<string, ReturnType<typeof createScopeCounters>>,
     countries: {} as Record<string, ReturnType<typeof createScopeCounters>>,
   };
@@ -167,6 +175,7 @@ export default function AdminDashboard() {
   const activityCounters = {
     Dubai: createScopeCounters(),
     OtherEmirates: createScopeCounters(),
+    International: createScopeCounters(),
     emirates: {} as Record<string, ReturnType<typeof createScopeCounters>>,
     countries: {} as Record<string, ReturnType<typeof createScopeCounters>>,
   };
@@ -174,6 +183,7 @@ export default function AdminDashboard() {
   const regionCounters = {
     Dubai: createRegionCounter(),
     OtherEmirates: createRegionCounter(),
+    International: createRegionCounter(),
     countries: {} as Record<string, ReturnType<typeof createRegionCounter>>,
   };
 
@@ -233,6 +243,7 @@ export default function AdminDashboard() {
           regionCounters.countries[bucketKey] = createRegionCounter();
         }
         addCount(regionCounters.countries[bucketKey].international, normalize(r.region), count);
+        addCount(regionCounters.International.international, normalize(r.region), count);
       }
     }
 
@@ -294,10 +305,29 @@ export default function AdminDashboard() {
       if (!activityCounters.countries[bucketKey]) activityCounters.countries[bucketKey] = createScopeCounters();
       addScopedRanking(sectorCounters.countries[bucketKey], scope, sectorLabel, count);
       addScopedRanking(activityCounters.countries[bucketKey], scope, activityLabel, count);
+      addScopedRanking(sectorCounters.International, scope, sectorLabel, count);
+      addScopedRanking(activityCounters.International, scope, activityLabel, count);
     }
   }
 
   const countryOptions = [...countrySet].sort((a, b) => a.localeCompare(b));
+
+  const countryRankings: CountryRankings = {
+    local: toTopRankings(
+      Object.fromEntries(
+        Object.entries(countryTotalsByScope)
+          .filter(([k]) => k !== "All Countries" && k !== "Unknown")
+          .map(([k, v]) => [k, v.local])
+      )
+    ),
+    international: toTopRankings(
+      Object.fromEntries(
+        Object.entries(countryTotalsByScope)
+          .filter(([k]) => k !== "All Countries" && k !== "Unknown")
+          .map(([k, v]) => [k, v.international])
+      )
+    ),
+  };
 
   const internationalTopRegionsAll = Object.entries(regionTotalsInternational)
     .map(([region, count]) => ({ region, count }))
@@ -312,6 +342,7 @@ export default function AdminDashboard() {
   const sectorRankings: GeographyRankings = {
     Dubai: mapScopeRankings(sectorCounters.Dubai),
     OtherEmirates: mapScopeRankings(sectorCounters.OtherEmirates),
+    International: mapScopeRankings(sectorCounters.International),
     emirates: Object.fromEntries(
       Object.entries(sectorCounters.emirates).map(([key, counts]) => [key, mapScopeRankings(counts)])
     ),
@@ -323,6 +354,7 @@ export default function AdminDashboard() {
   const activityRankings: GeographyRankings = {
     Dubai: mapScopeRankings(activityCounters.Dubai),
     OtherEmirates: mapScopeRankings(activityCounters.OtherEmirates),
+    International: mapScopeRankings(activityCounters.International),
     emirates: Object.fromEntries(
       Object.entries(activityCounters.emirates).map(([key, counts]) => [key, mapScopeRankings(counts)])
     ),
@@ -334,6 +366,7 @@ export default function AdminDashboard() {
   const regionRankings: RegionRankings = {
     Dubai: toTopRankings(regionCounters.Dubai.international),
     OtherEmirates: toTopRankings(regionCounters.OtherEmirates.international),
+    International: toTopRankings(regionCounters.International.international),
     countries: Object.fromEntries(
       Object.entries(regionCounters.countries).map(([key, counts]) => [key, toTopRankings(counts.international)])
     ),
@@ -411,6 +444,7 @@ export default function AdminDashboard() {
           sectorRankings={sectorRankings}
           activityRankings={activityRankings}
           regionRankings={regionRankings}
+          countryRankings={countryRankings}
           formatInt={formatInt}
         />
 
