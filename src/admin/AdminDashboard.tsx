@@ -9,8 +9,35 @@ import EngagementSection from "./sections/EngagementSection";
 import {
   buildExecutiveSignals,
   computeBaseScopeMatrix,
+  type ActivityBreakdown,
   type AnalyticsResponse,
+  type SectorDemand,
 } from "./intelligence/demandAggregations";
+
+type ScopeBreakdown<T> = {
+  local: T[];
+  international: T[];
+};
+
+type RankingItem = { label: string; count: number };
+
+type GeographyRankings = {
+  Dubai: ScopeBreakdown<RankingItem>;
+  OtherEmirates: ScopeBreakdown<RankingItem>;
+  emirates: Record<string, ScopeBreakdown<RankingItem>>;
+  countries: Record<string, ScopeBreakdown<RankingItem>>;
+};
+
+type RegionRankings = {
+  Dubai: RankingItem[];
+  OtherEmirates: RankingItem[];
+  countries: Record<string, RankingItem[]>;
+};
+
+const EMPTY_SCOPE_BREAKDOWN: ScopeBreakdown<RankingItem> = {
+  local: [],
+  international: [],
+};
 
 export default function AdminDashboard() {
   const [range, setRange] = useState<"7d" | "30d" | "all">("30d");
@@ -123,10 +150,66 @@ export default function AdminDashboard() {
     return raw;
   };
 
+  const toTopRankings = (counts: Record<string, number>): RankingItem[] =>
+    Object.entries(counts)
+      .map(([label, count]) => ({ label, count }))
+      .filter((row) => row.label !== "Unknown" && row.count > 0)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+
+  const createScopeCounters = () => ({
+    local: {} as Record<string, number>,
+    international: {} as Record<string, number>,
+  });
+
+  const createRegionCounter = () => ({ international: {} as Record<string, number> });
+
+  const sectorCounters = {
+    Dubai: createScopeCounters(),
+    OtherEmirates: createScopeCounters(),
+    emirates: {} as Record<string, ReturnType<typeof createScopeCounters>>,
+    countries: {} as Record<string, ReturnType<typeof createScopeCounters>>,
+  };
+
+  const activityCounters = {
+    Dubai: createScopeCounters(),
+    OtherEmirates: createScopeCounters(),
+    emirates: {} as Record<string, ReturnType<typeof createScopeCounters>>,
+    countries: {} as Record<string, ReturnType<typeof createScopeCounters>>,
+  };
+
+  const regionCounters = {
+    Dubai: createRegionCounter(),
+    OtherEmirates: createRegionCounter(),
+    countries: {} as Record<string, ReturnType<typeof createRegionCounter>>,
+  };
+
+  const addCount = (bucket: Record<string, number>, label: string, count: number) => {
+    if (!label || label === "Unknown" || count <= 0) return;
+    bucket[label] = (bucket[label] || 0) + count;
+  };
+
+  const addScopedRanking = (
+    target: ReturnType<typeof createScopeCounters>,
+    scope: string,
+    label: string,
+    count: number
+  ) => {
+    if (scope === "Local") addCount(target.local, label, count);
+    if (scope === "International") addCount(target.international, label, count);
+  };
+
   for (const r of detailed_location || []) {
     const locationBase = normalize(r.location_base);
     const scope = normalize(r.scope);
     const count = safeNum(r.count);
+    const detailedRow = r as typeof r & {
+      sector?: string | null;
+      activity_name?: string | null;
+      activity_id?: string | null;
+    };
+    const sectorLabel = normalize(detailedRow.sector);
+    const activityLabel = normalize(detailedRow.activity_name || detailedRow.activity_id);
 
     if (locationBase === "International") {
       const country = normalize(r.country);
@@ -151,6 +234,22 @@ export default function AdminDashboard() {
           regionTotalsInternational[region] = (regionTotalsInternational[region] || 0) + count;
         }
       }
+
+      if (!sectorCounters.countries[bucketKey]) {
+        sectorCounters.countries[bucketKey] = createScopeCounters();
+      }
+      if (!activityCounters.countries[bucketKey]) {
+        activityCounters.countries[bucketKey] = createScopeCounters();
+      }
+      addScopedRanking(sectorCounters.countries[bucketKey], scope, sectorLabel, count);
+      addScopedRanking(activityCounters.countries[bucketKey], scope, activityLabel, count);
+
+      if (scope === "International") {
+        if (!regionCounters.countries[bucketKey]) {
+          regionCounters.countries[bucketKey] = createRegionCounter();
+        }
+        addCount(regionCounters.countries[bucketKey].international, normalize(r.region), count);
+      }
     }
 
     if (locationBase === "UAE") {
@@ -169,6 +268,31 @@ export default function AdminDashboard() {
         emirateTotalsByScope[bucketKey].international += count;
         emirateTotalsByScope.All.international += count;
       }
+
+      if (!sectorCounters.emirates[bucketKey]) {
+        sectorCounters.emirates[bucketKey] = createScopeCounters();
+      }
+      if (!activityCounters.emirates[bucketKey]) {
+        activityCounters.emirates[bucketKey] = createScopeCounters();
+      }
+      addScopedRanking(sectorCounters.emirates[bucketKey], scope, sectorLabel, count);
+      addScopedRanking(activityCounters.emirates[bucketKey], scope, activityLabel, count);
+
+      addScopedRanking(sectorCounters.OtherEmirates, scope, sectorLabel, count);
+      addScopedRanking(activityCounters.OtherEmirates, scope, activityLabel, count);
+
+      if (scope === "International") {
+        addCount(regionCounters.OtherEmirates.international, normalize(r.region), count);
+      }
+    }
+
+    if (locationBase === "Dubai") {
+      addScopedRanking(sectorCounters.Dubai, scope, sectorLabel, count);
+      addScopedRanking(activityCounters.Dubai, scope, activityLabel, count);
+
+      if (scope === "International") {
+        addCount(regionCounters.Dubai.international, normalize(r.region), count);
+      }
     }
   }
 
@@ -178,6 +302,41 @@ export default function AdminDashboard() {
     .map(([region, count]) => ({ region, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
+
+  const mapScopeRankings = (scopeCounts?: ReturnType<typeof createScopeCounters>): ScopeBreakdown<RankingItem> => ({
+    local: toTopRankings(scopeCounts?.local || {}),
+    international: toTopRankings(scopeCounts?.international || {}),
+  });
+
+  const sectorRankings: GeographyRankings = {
+    Dubai: mapScopeRankings(sectorCounters.Dubai),
+    OtherEmirates: mapScopeRankings(sectorCounters.OtherEmirates),
+    emirates: Object.fromEntries(
+      Object.entries(sectorCounters.emirates).map(([key, counts]) => [key, mapScopeRankings(counts)])
+    ),
+    countries: Object.fromEntries(
+      Object.entries(sectorCounters.countries).map(([key, counts]) => [key, mapScopeRankings(counts)])
+    ),
+  };
+
+  const activityRankings: GeographyRankings = {
+    Dubai: mapScopeRankings(activityCounters.Dubai),
+    OtherEmirates: mapScopeRankings(activityCounters.OtherEmirates),
+    emirates: Object.fromEntries(
+      Object.entries(activityCounters.emirates).map(([key, counts]) => [key, mapScopeRankings(counts)])
+    ),
+    countries: Object.fromEntries(
+      Object.entries(activityCounters.countries).map(([key, counts]) => [key, mapScopeRankings(counts)])
+    ),
+  };
+
+  const regionRankings: RegionRankings = {
+    Dubai: toTopRankings(regionCounters.Dubai.international),
+    OtherEmirates: toTopRankings(regionCounters.OtherEmirates.international),
+    countries: Object.fromEntries(
+      Object.entries(regionCounters.countries).map(([key, counts]) => [key, toTopRankings(counts.international)])
+    ),
+  };
 
   const topOverallRegion = internationalTopRegionsAll[0] || null;
 
@@ -248,6 +407,9 @@ export default function AdminDashboard() {
           internationalTopRegionsAll={internationalTopRegionsAll}
           overallTopSectors={overallTopSectors}
           overallTopActivities={overallTopActivities}
+          sectorRankings={sectorRankings}
+          activityRankings={activityRankings}
+          regionRankings={regionRankings}
           formatInt={formatInt}
         />
 
