@@ -280,6 +280,9 @@ export default function AdminDashboard() {
   const [showAllUaeEmirates, setShowAllUaeEmirates] = React.useState(false);
   const [showAllCountries, setShowAllCountries] = React.useState(false);
 
+  // Demand Intelligence tab
+  const [demandTab, setDemandTab] = useState<"Total" | "Dubai" | "UAE" | "International">("Total");
+
   useEffect(() => {
     let cancelled = false;
 
@@ -564,104 +567,149 @@ const totalSubmissions =
 <ExecutiveSignals signals={signals} />
 
 
-  <Panel title="Total demand signals">
-  <div className="text-4xl font-semibold text-[#003B5C]">
-    {formatInt(totalSubmissions)}
-  </div>
-  <div className="text-sm text-gray-500 mt-2">
-    Total advisory submissions across all jurisdictions
-  </div>
-</Panel>
+      {/* ── Demand Intelligence (Tab Panel) ── */}
+      <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
 
-      {/* Jurisdiction Snapshot */}
-      <SectionTitle
-        title="Jurisdiction snapshot"
-        subtitle="Always separated: Dubai (core), UAE other emirates (conversion), International (inbound)."
-      />
+        {/* Header + tab bar */}
+        <div className="px-6 lg:px-7 pt-6">
+          <div className="text-xs uppercase tracking-wider text-gray-500">
+            Demand Intelligence
+          </div>
+          <div className="flex mt-4 border-b border-gray-100">
+            {(["Total", "Dubai", "UAE", "International"] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setDemandTab(tab)}
+                className={`px-5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                  demandTab === tab
+                    ? "border-[#003B5C] text-[#003B5C]"
+                    : "border-transparent text-gray-500 hover:text-[#003B5C]"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Panel title="Dubai">
-          <MiniStat label="Local" value={formatInt(baseMatrix.Dubai?.Local || 0)} />
-          <MiniStat label="International" value={formatInt(baseMatrix.Dubai?.International || 0)} />
-          <Divider />
-          <MiniStat label="Total" value={formatInt(baseMatrix.Dubai?.Total || 0)} />
-        </Panel>
+        {/* Dynamic content — fixed min-height keeps panel stable */}
+        <div className="px-6 lg:px-7 py-6 min-h-[360px]">
 
-        <Panel title="UAE (Other Emirates)">
-          <MiniStat label="Local" value={formatInt(baseMatrix.UAE?.Local || 0)} />
-          <MiniStat label="International" value={formatInt(baseMatrix.UAE?.International || 0)} />
-          <Divider />
-          <MiniStat label="Total" value={formatInt(baseMatrix.UAE?.Total || 0)} />
-        </Panel>
+          {/* ── Total tab ── */}
+          {demandTab === "Total" && (
+            <div className="space-y-6">
+              <div>
+                <div className="text-4xl font-semibold text-[#003B5C]">
+                  {formatInt(totalSubmissions)}
+                </div>
+                <div className="text-sm text-gray-500 mt-1">
+                  Total advisory submissions across all jurisdictions
+                </div>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="rounded-xl border border-gray-100 p-4">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Dubai</div>
+                  <MiniStat label="Local" value={formatInt(baseMatrix.Dubai?.Local || 0)} />
+                  <MiniStat label="International" value={formatInt(baseMatrix.Dubai?.International || 0)} />
+                  <Divider />
+                  <MiniStat label="Total" value={formatInt(baseMatrix.Dubai?.Total || 0)} />
+                </div>
+                <div className="rounded-xl border border-gray-100 p-4">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">UAE (Other Emirates)</div>
+                  <MiniStat label="Local" value={formatInt(baseMatrix.UAE?.Local || 0)} />
+                  <MiniStat label="International" value={formatInt(baseMatrix.UAE?.International || 0)} />
+                  <Divider />
+                  <MiniStat label="Total" value={formatInt(baseMatrix.UAE?.Total || 0)} />
+                </div>
+                <div className="rounded-xl border border-gray-100 p-4">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">International (Inbound)</div>
+                  <MiniStat label="Local" value={formatInt(baseMatrix.International?.Local || 0)} />
+                  <MiniStat label="International" value={formatInt(baseMatrix.International?.International || 0)} />
+                  <Divider />
+                  <MiniStat label="Total" value={formatInt(baseMatrix.International?.Total || 0)} />
+                </div>
+              </div>
+            </div>
+          )}
 
-        <Panel title="International (Inbound)">
-          <MiniStat label="Local" value={formatInt(baseMatrix.International?.Local || 0)} />
-          <MiniStat label="International" value={formatInt(baseMatrix.International?.International || 0)} />
-          <Divider />
-          <MiniStat label="Total" value={formatInt(baseMatrix.International?.Total || 0)} />
-        </Panel>
+          {/* ── Dubai tab ── */}
+          {demandTab === "Dubai" && (
+            <div className="space-y-5">
+              <div className="text-xs uppercase tracking-wider text-gray-500">Dubai advisory demand</div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="rounded-xl border border-gray-100 p-4">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Local Applications</div>
+                  <div className="text-3xl font-semibold text-[#003B5C]">{formatInt(baseMatrix.Dubai?.Local || 0)}</div>
+                  <div className="text-xs text-gray-400 mt-1">scope = Local</div>
+                </div>
+                <div className="rounded-xl border border-gray-100 p-4">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">International Applications</div>
+                  <div className="text-3xl font-semibold text-[#003B5C]">{formatInt(baseMatrix.Dubai?.International || 0)}</div>
+                  <div className="text-xs text-gray-400 mt-1">scope = International</div>
+                </div>
+                <div className="rounded-xl border border-gray-100 p-4">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Total</div>
+                  <div className="text-3xl font-semibold text-[#003B5C]">{formatInt(baseMatrix.Dubai?.Total || 0)}</div>
+                  <div className="text-xs text-gray-400 mt-1">all scopes</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── UAE tab ── */}
+          {demandTab === "UAE" && (
+            <div className="space-y-5">
+              <div className="text-xs uppercase tracking-wider text-gray-500">Other Emirates advisory demand</div>
+              {uaeEmiratesRows.length === 0 ? (
+                <Empty />
+              ) : (
+                <div className="space-y-2">
+                  {uaeEmiratesRows.map((r) => (
+                    <TableRow4
+                      key={r.emirate}
+                      a={r.emirate}
+                      b={formatInt(r.Local)}
+                      c={formatInt(r.International)}
+                      d={formatInt(r.Total)}
+                    />
+                  ))}
+                  {uaeEmirates.length > 6 ? (
+                    <Toggle expanded={showAllUaeEmirates} onClick={() => setShowAllUaeEmirates((v) => !v)} />
+                  ) : null}
+                </div>
+              )}
+              <UAEEmiratesMap data={uaeHeatmapData} />
+            </div>
+          )}
+
+          {/* ── International tab ── */}
+          {demandTab === "International" && (
+            <div className="space-y-5">
+              <div className="text-xs uppercase tracking-wider text-gray-500">International inbound demand</div>
+              {countriesRows.length === 0 ? (
+                <Empty />
+              ) : (
+                <div className="space-y-2">
+                  {countriesRows.map((r) => (
+                    <TableRow4
+                      key={r.country}
+                      a={r.country}
+                      b={formatInt(r.Local)}
+                      c={formatInt(r.International)}
+                      d={formatInt(r.Total)}
+                    />
+                  ))}
+                  {countries.length > 6 ? (
+                    <Toggle expanded={showAllCountries} onClick={() => setShowAllCountries((v) => !v)} />
+                  ) : null}
+                </div>
+              )}
+            </div>
+          )}
+
+        </div>
       </div>
-
-      {/* UAE Conversion Intelligence */}
-      <SectionTitle
-        title="Other Emirates Demand"
-        subtitle="Other emirates showing demand — a pipeline for Dubai Chambers membership conversion."
-      />
-      <Panel title="Demand by UAE emirate">
-        {uaeEmiratesRows.length === 0 ? (
-          <Empty />
-        ) : (
-          <div className="space-y-2">
-            {uaeEmiratesRows.map((r) => (
-              <TableRow4
-                key={r.emirate}
-                a={r.emirate}
-                b={formatInt(r.Local)}
-                c={formatInt(r.International)}
-                d={formatInt(r.Total)}
-              />
-            ))}
-            {uaeEmirates.length > 6 ? (
-              <Toggle expanded={showAllUaeEmirates} onClick={() => setShowAllUaeEmirates((v) => !v)} />
-            ) : null}
-          </div>
-        )}
-      </Panel>
-
-<SectionTitle
-  title="UAE emirate demand heatmap"
-  subtitle="Demand signals across UAE emirates outside Dubai."
-/>
-
-<Panel title="UAE emirate demand intensity">
-  <UAEEmiratesMap data={uaeHeatmapData} />
-</Panel>
-
-      {/* International Inbound Intelligence */}
-     <SectionTitle
-  title="International Demand"
-  subtitle="Foreign businesses requesting advisory support related to Dubai."
-/>
-      <Panel title="International Demand by country">
-        {countriesRows.length === 0 ? (
-          <Empty />
-        ) : (
-          <div className="space-y-2">
-            {countriesRows.map((r) => (
-              <TableRow4
-                key={r.country}
-                a={r.country}
-                b={formatInt(r.Local)}
-                c={formatInt(r.International)}
-                d={formatInt(r.Total)}
-              />
-            ))}
-            {countries.length > 6 ? (
-              <Toggle expanded={showAllCountries} onClick={() => setShowAllCountries((v) => !v)} />
-            ) : null}
-          </div>
-        )}
-      </Panel>
 
 {/*
 <SectionTitle
