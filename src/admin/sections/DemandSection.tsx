@@ -5,6 +5,15 @@ import type { ActivityBreakdown, SectorDemand } from "../intelligence/demandAggr
 type JurisdictionKey = "Dubai" | "OtherEmirates" | "International";
 type RankingItem = { label: string; count: number };
 type ScopeBreakdown = { local: RankingItem[]; international: RankingItem[] };
+type DemandTab = "Total" | "Dubai" | "UAE" | "International";
+type EmirateOption =
+  | "All"
+  | "Abu Dhabi"
+  | "Sharjah"
+  | "Ajman"
+  | "Ras Al Khaimah"
+  | "Fujairah"
+  | "Umm Al Quwain";
 
 export default function DemandSection({
   overallTotals,
@@ -62,36 +71,109 @@ export default function DemandSection({
   countryRankings: { local: RankingItem[]; international: RankingItem[] };
   formatInt: (v: number) => string;
 }) {
+  const [demandTab, setDemandTab] = React.useState<DemandTab>("Total");
+  const [selectedEmirate, setSelectedEmirate] = React.useState<EmirateOption>("All");
+  const [selectedCountry, setSelectedCountry] = React.useState<string>("All Countries");
+
+  const jurisdiction: JurisdictionKey =
+    demandTab === "Dubai"
+      ? "Dubai"
+      : demandTab === "UAE"
+        ? "OtherEmirates"
+        : "International";
+
   return (
     <>
       <SectionHeader>DEMAND INTELLIGENCE</SectionHeader>
 
-      <DemandJurisdictionExplorer
-        overallTotals={overallTotals}
-        topOverallSector={topOverallSector}
-        topOverallActivity={topOverallActivity}
-        topOverallRegion={topOverallRegion}
-        jurisdictionTotals={jurisdictionTotals}
-        emirateTotalsByScope={emirateTotalsByScope}
-        countryTotalsByScope={countryTotalsByScope}
-        countryOptions={countryOptions}
-        internationalTopRegionsAll={internationalTopRegionsAll}
-        overallTopSectors={overallTopSectors}
-        overallTopActivities={overallTopActivities}
-        sectorRankings={sectorRankings}
-        activityRankings={activityRankings}
-        regionRankings={regionRankings}
-        countryRankings={countryRankings}
-        formatInt={formatInt}
-      >
-        <TotalApplicationsCard
-          overallTotals={overallTotals}
-          topOverallSector={topOverallSector}
-          topOverallActivity={topOverallActivity}
-          topOverallRegion={topOverallRegion}
-          formatInt={formatInt}
-        />
-      </DemandJurisdictionExplorer>
+      <div className="rounded-2xl border border-[#E6ECF2] bg-white shadow-sm overflow-hidden">
+        {/* Tab bar */}
+        <div className="px-6 lg:px-7 pt-5">
+          <div className="flex border-b border-[#E6ECF2]">
+            {(["Total", "Dubai", "UAE", "International"] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setDemandTab(tab)}
+                className={`px-5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                  demandTab === tab
+                    ? "border-[#003B5C] text-[#003B5C]"
+                    : "border-transparent text-gray-500 hover:text-[#003B5C]"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tab content */}
+        <div className="p-6 lg:p-7 min-h-[400px]">
+
+          {/* ── Total tab ── */}
+          {demandTab === "Total" && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <MetricBox label="Total Applications" value={formatInt(overallTotals.total)} />
+                <MetricBox label="Local Applications" value={formatInt(overallTotals.local)} />
+                <MetricBox label="International Applications" value={formatInt(overallTotals.international)} />
+              </div>
+
+              <Divider />
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <IntelligenceBlock label="Top Sector" value={topOverallSector?.sector ?? "—"} />
+                <IntelligenceBlock label="Top Activity" value={topOverallActivity?.activity_name ?? "—"} />
+                <IntelligenceBlock label="Top Expansion Region" value={topOverallRegion?.region ?? "—"} />
+              </div>
+
+              <Divider />
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <JurisdictionCard
+                  title="Dubai"
+                  totals={jurisdictionTotals.Dubai}
+                  onClick={() => setDemandTab("Dubai")}
+                  formatInt={formatInt}
+                />
+                <JurisdictionCard
+                  title="Other Emirates"
+                  totals={jurisdictionTotals.OtherEmirates}
+                  onClick={() => setDemandTab("UAE")}
+                  formatInt={formatInt}
+                />
+                <JurisdictionCard
+                  title="International"
+                  totals={jurisdictionTotals.International}
+                  onClick={() => setDemandTab("International")}
+                  formatInt={formatInt}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ── Dubai / UAE / International tabs ── */}
+          {demandTab !== "Total" && (
+            <JurisdictionTabContent
+              jurisdiction={jurisdiction}
+              selectedEmirate={selectedEmirate}
+              setSelectedEmirate={setSelectedEmirate}
+              selectedCountry={selectedCountry}
+              setSelectedCountry={setSelectedCountry}
+              countryOptions={countryOptions}
+              emirateTotalsByScope={emirateTotalsByScope}
+              countryTotalsByScope={countryTotalsByScope}
+              jurisdictionTotals={jurisdictionTotals}
+              sectorRankings={sectorRankings}
+              activityRankings={activityRankings}
+              regionRankings={regionRankings}
+              countryRankings={countryRankings}
+              formatInt={formatInt}
+            />
+          )}
+
+        </div>
+      </div>
     </>
   );
 }
@@ -131,202 +213,7 @@ function Divider() {
   return <div className="h-px bg-gray-100" />;
 }
 
-function TotalApplicationsCard({
-  overallTotals,
-  topOverallSector,
-  topOverallActivity,
-  topOverallRegion,
-  showBreakdown,
-  onToggleBreakdown,
-  formatInt,
-}: {
-  overallTotals: { total: number; local: number; international: number };
-  topOverallSector: SectorDemand | null;
-  topOverallActivity: ActivityBreakdown | null;
-  topOverallRegion: { region: string; count: number } | null;
-  showBreakdown?: boolean;
-  onToggleBreakdown?: () => void;
-  formatInt: (v: number) => string;
-}) {
-  return (
-    <Card title="Total Applications">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <MetricBox label="Total Applications" value={formatInt(overallTotals.total)} />
-        <MetricBox label="Local Applications" value={formatInt(overallTotals.local)} />
-        <MetricBox label="International Applications" value={formatInt(overallTotals.international)} />
-      </div>
 
-      <Divider />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <IntelligenceBlock label="Top Sector" value={topOverallSector?.sector ?? "—"} />
-        <IntelligenceBlock label="Top Activity" value={topOverallActivity?.activity_name ?? "—"} />
-        <IntelligenceBlock label="Top Expansion Region" value={topOverallRegion?.region ?? "—"} />
-      </div>
-
-      <div>
-        <button
-          type="button"
-          onClick={onToggleBreakdown}
-          className="px-4 py-2 text-sm rounded-lg border border-[#E6ECF2] bg-white text-gray-700 hover:bg-gray-50"
-        >
-          {showBreakdown ? "Hide Jurisdiction Breakdown" : "View Jurisdiction Breakdown"}
-        </button>
-      </div>
-    </Card>
-  );
-}
-
-function DemandJurisdictionExplorer({
-  overallTotals,
-  topOverallSector,
-  topOverallActivity,
-  topOverallRegion,
-  jurisdictionTotals,
-  emirateTotalsByScope,
-  countryTotalsByScope,
-  countryOptions,
-  internationalTopRegionsAll,
-  overallTopSectors,
-  overallTopActivities,
-  sectorRankings,
-  activityRankings,
-  regionRankings,
-  countryRankings,
-  formatInt,
-  children,
-}: {
-  overallTotals: { total: number; local: number; international: number };
-  topOverallSector: SectorDemand | null;
-  topOverallActivity: ActivityBreakdown | null;
-  topOverallRegion: { region: string; count: number } | null;
-  jurisdictionTotals: Record<JurisdictionKey, { total: number; local: number; international: number }>;
-  emirateTotalsByScope: Record<string, { total: number; local: number; international: number }>;
-  countryTotalsByScope: Record<string, { total: number; local: number; international: number }>;
-  countryOptions: string[];
-  internationalTopRegionsAll: { region: string; count: number }[];
-  overallTopSectors: SectorDemand[];
-  overallTopActivities: ActivityBreakdown[];
-  sectorRankings: {
-    Dubai: ScopeBreakdown;
-    OtherEmirates: ScopeBreakdown;
-    International: ScopeBreakdown;
-    emirates: Record<string, ScopeBreakdown>;
-    countries: Record<string, ScopeBreakdown>;
-  };
-  activityRankings: {
-    Dubai: ScopeBreakdown;
-    OtherEmirates: ScopeBreakdown;
-    International: ScopeBreakdown;
-    emirates: Record<string, ScopeBreakdown>;
-    countries: Record<string, ScopeBreakdown>;
-  };
-  regionRankings: {
-    Dubai: RankingItem[];
-    OtherEmirates: RankingItem[];
-    International: RankingItem[];
-    countries: Record<string, RankingItem[]>;
-  };
-  countryRankings: { local: RankingItem[]; international: RankingItem[] };
-  formatInt: (v: number) => string;
-  children: React.ReactElement;
-}) {
-  const [showBreakdown, setShowBreakdown] = React.useState(false);
-  const [activeJurisdiction, setActiveJurisdiction] = React.useState<JurisdictionKey | null>(null);
-  const [selectedEmirate, setSelectedEmirate] = React.useState<
-    "All" | "Abu Dhabi" | "Sharjah" | "Ajman" | "Ras Al Khaimah" | "Fujairah" | "Umm Al Quwain"
-  >("All");
-  const [selectedCountry, setSelectedCountry] = React.useState<string>("All Countries");
-
-  React.useEffect(() => {
-    if (!showBreakdown) {
-      setActiveJurisdiction(null);
-      setSelectedEmirate("All");
-      setSelectedCountry("All Countries");
-    }
-  }, [showBreakdown]);
-
-  const masterCard = React.cloneElement(children, {
-    overallTotals,
-    topOverallSector,
-    topOverallActivity,
-    topOverallRegion,
-    showBreakdown,
-    onToggleBreakdown: () => setShowBreakdown((v) => !v),
-  });
-
-  if (!showBreakdown) return masterCard;
-
-  return (
-    <div className="space-y-6">
-      {masterCard}
-
-      {activeJurisdiction === null ? (
-        <JurisdictionSelectorRow
-          totals={jurisdictionTotals}
-          onSelect={(j) => setActiveJurisdiction(j)}
-          formatInt={formatInt}
-        />
-      ) : (
-        <DemandDetailView
-          jurisdiction={activeJurisdiction}
-          onBack={() => setActiveJurisdiction(null)}
-          selectedEmirate={selectedEmirate}
-          setSelectedEmirate={setSelectedEmirate}
-          selectedCountry={selectedCountry}
-          setSelectedCountry={setSelectedCountry}
-          countryOptions={countryOptions}
-          emirateTotalsByScope={emirateTotalsByScope}
-          countryTotalsByScope={countryTotalsByScope}
-          jurisdictionTotals={jurisdictionTotals}
-          internationalTopRegionsAll={internationalTopRegionsAll}
-          overallTopSectors={overallTopSectors}
-          overallTopActivities={overallTopActivities}
-          sectorRankings={sectorRankings}
-          activityRankings={activityRankings}
-          regionRankings={regionRankings}
-          countryRankings={countryRankings}
-          formatInt={formatInt}
-        />
-      )}
-    </div>
-  );
-}
-
-function JurisdictionSelectorRow({
-  totals,
-  onSelect,
-  formatInt,
-}: {
-  totals: Record<JurisdictionKey, { total: number; local: number; international: number }>;
-  onSelect: (j: JurisdictionKey) => void;
-  formatInt: (v: number) => string;
-}) {
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <JurisdictionCard
-        title="Dubai"
-        totals={totals.Dubai}
-        onClick={() => onSelect("Dubai")}
-        formatInt={formatInt}
-      />
-
-      <JurisdictionCard
-        title="Other Emirates"
-        totals={totals.OtherEmirates}
-        onClick={() => onSelect("OtherEmirates")}
-        formatInt={formatInt}
-      />
-
-      <JurisdictionCard
-        title="International"
-        totals={totals.International}
-        onClick={() => onSelect("International")}
-        formatInt={formatInt}
-      />
-    </div>
-  );
-}
 
 function JurisdictionCard({
   title,
@@ -362,9 +249,8 @@ function JurisdictionCard({
   );
 }
 
-function DemandDetailView({
+function JurisdictionTabContent({
   jurisdiction,
-  onBack,
   selectedEmirate,
   setSelectedEmirate,
   selectedCountry,
@@ -373,9 +259,6 @@ function DemandDetailView({
   emirateTotalsByScope,
   countryTotalsByScope,
   jurisdictionTotals,
-  internationalTopRegionsAll,
-  overallTopSectors,
-  overallTopActivities,
   sectorRankings,
   activityRankings,
   regionRankings,
@@ -383,22 +266,14 @@ function DemandDetailView({
   formatInt,
 }: {
   jurisdiction: JurisdictionKey;
-  onBack: () => void;
-  selectedEmirate: "All" | "Abu Dhabi" | "Sharjah" | "Ajman" | "Ras Al Khaimah" | "Fujairah" | "Umm Al Quwain";
-  setSelectedEmirate: React.Dispatch<
-    React.SetStateAction<
-      "All" | "Abu Dhabi" | "Sharjah" | "Ajman" | "Ras Al Khaimah" | "Fujairah" | "Umm Al Quwain"
-    >
-  >;
+  selectedEmirate: EmirateOption;
+  setSelectedEmirate: React.Dispatch<React.SetStateAction<EmirateOption>>;
   selectedCountry: string;
   setSelectedCountry: React.Dispatch<React.SetStateAction<string>>;
   countryOptions: string[];
   emirateTotalsByScope: Record<string, { total: number; local: number; international: number }>;
   countryTotalsByScope: Record<string, { total: number; local: number; international: number }>;
   jurisdictionTotals: Record<JurisdictionKey, { total: number; local: number; international: number }>;
-  internationalTopRegionsAll: { region: string; count: number }[];
-  overallTopSectors: SectorDemand[];
-  overallTopActivities: ActivityBreakdown[];
   sectorRankings: {
     Dubai: ScopeBreakdown;
     OtherEmirates: ScopeBreakdown;
@@ -422,18 +297,12 @@ function DemandDetailView({
   countryRankings: { local: RankingItem[]; international: RankingItem[] };
   formatInt: (v: number) => string;
 }) {
-  const title =
-    jurisdiction === "OtherEmirates" ? "Other Emirates" : jurisdiction === "International" ? "International" : "Dubai";
-
-  const totalsKey =
-    jurisdiction === "Dubai" ? "Dubai" : jurisdiction === "OtherEmirates" ? selectedEmirate : selectedCountry;
-
   const totals =
     jurisdiction === "Dubai"
       ? jurisdictionTotals.Dubai
       : jurisdiction === "OtherEmirates"
-        ? emirateTotalsByScope[selectedEmirate] || emirateTotalsByScope.All
-        : countryTotalsByScope[selectedCountry] || countryTotalsByScope["All Countries"];
+        ? emirateTotalsByScope[selectedEmirate] || emirateTotalsByScope["All"] || { total: 0, local: 0, international: 0 }
+        : countryTotalsByScope[selectedCountry] || countryTotalsByScope["All Countries"] || { total: 0, local: 0, international: 0 };
 
   const hasApplications = totals.total > 0;
   const emptyScope: ScopeBreakdown = { local: [], international: [] };
@@ -482,35 +351,11 @@ function DemandDetailView({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <div className="text-xs uppercase tracking-wider text-gray-500">Demand Intelligence</div>
-          <div className="mt-1 text-xl font-semibold text-[#003B5C]">{title}</div>
-          <div className="mt-1 text-sm text-gray-600">{totalsKey}</div>
-        </div>
-
-        <button
-          type="button"
-          onClick={onBack}
-          className="px-4 py-2 text-sm rounded-lg border border-[#E6ECF2] bg-white text-gray-700 hover:bg-gray-50"
-        >
-          Back to Jurisdictions
-        </button>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <MetricBox label="Total Applications" value={formatInt(totals.total)} />
+        <MetricBox label="Local Applications" value={formatInt(totals.local)} />
+        <MetricBox label="International Applications" value={formatInt(totals.international)} />
       </div>
-
-      <Card title="Summary metrics">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <MetricBox label="Total Applications" value={formatInt(totals.total)} />
-          <MetricBox label="Local Applications" value={formatInt(totals.local)} />
-          <MetricBox label="International Applications" value={formatInt(totals.international)} />
-        </div>
-
-        {!hasApplications ? (
-          <div className="rounded-xl border border-[#E6ECF2] bg-white p-4 text-sm text-gray-600">
-            No applications yet
-          </div>
-        ) : null}
-      </Card>
 
       {jurisdiction === "OtherEmirates" ? (
         <EmirateSelectorTabs selected={selectedEmirate} onSelect={setSelectedEmirate} />
